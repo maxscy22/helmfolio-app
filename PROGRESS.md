@@ -36,6 +36,13 @@ _Last updated: 2026-06-01 (~20:34). Website is LIVE at https://helmfolio.com. **
 - **Detailed version** → Download-section callout + FAQ answer. **Concise ⚠️ version** ("⚠️ US Market Support Only: ...") → under pricing/checkout + in-app IBKR sync note (app version drops the "before purchasing Pro" CTA).
 - Updated `site/index.html` (3 spots), `src/App.tsx` (~1579), `legal/DISCLAIMER.md` clause 4, `site/legal/disclaimer.html`. `npm run build` passes; site deployed. **App copy needs next release (v1.0.6) to reach users.**
 
+### License lapse test (2026-06-01, user-tested with a same-day-expiry key)
+- **Observed**: (1) Pro worked normally for the first half of the day; (2) ~4-5PM it **silently reverted to Free with NO popup/notification**.
+- **Verdict**: this IS the designed `lapsed` path, working correctly. Mechanism (`src/lib/license.ts`): the signed JWT `exp` doubles as a ~24h offline grace window; `renewLicenseIfNeeded()` skips the server unless the active token is within 12h of expiry (`RENEW_THRESHOLD_SECONDS`) or already `expired`. When it does re-validate and the Worker returns **402** (LemonSqueezy term ended), it sets `status: 'lapsed'`, clears the stored token, and drops `tier → 'free'` (covered by `license.test.ts` "flips to LAPSED on 402"). Downgrade-to-free is correct/expected.
+- **UX GAP (not a bug, but worth fixing)**: lapse is **silent**. Background renewal only mutates `licenseState`; there is NO `setShowLicense(true)` / toast / banner on the `lapsed` (or `expired`) transition. `LICENSE_LAPSED_MESSAGE` ("Your 1-year Pro license has expired…") is only seen if the user manually opens the License modal. A paying user whose term ends just quietly loses Pro features with no explanation.
+- **Timing note**: re-validation only fires on **app launch or the window `online` event** (no periodic timer), so the exact flip time depends on those triggers (network reconnect / sleep-wake / relaunch).
+- **Recommended enhancement (next release)**: when status transitions to `lapsed` (and probably `expired`), proactively surface it — e.g. auto-open the License modal or show a dismissible banner/toast with the renewal message + "Renew" CTA. Decide before charging real customers.
+
 ### Session 2 commits
 - `50b5b2d` analytics · `e7dd6eb` _headers · `6b66a4a` guides + US-market site copy · `45e659b` v1.0.5 app/legal · `b2a4462` PROGRESS · `3505a5d` guides Privacy link · `563ce43` guides nav order · `e8bba2f` PROGRESS · `c65ff1f` US-market copy refinement.
 
@@ -94,6 +101,7 @@ _Last updated: 2026-06-01 (~20:34). Website is LIVE at https://helmfolio.com. **
 5. **Guide screenshots**: capture IBKR Flex Query "General Configuration" + Statements-CSV screens → drop in `site/assets/guides/`, replace the dashed placeholders in the two guide pages.
 6. Optional: dedicated 1200×630 OG banner. ✅ Cloudflare Web Analytics now live.
 7. Optional (future): compile Tailwind to static CSS, then add a strict CSP in `site/_headers`.
+8. **License lapse is SILENT** (verified 2026-06-01): when a Pro term ends, the app drops to Free with no popup/toast. Add a proactive notification (auto-open License modal or banner with renewal CTA) on the `lapsed`/`expired` transition. See "License lapse test" above. Decide before charging real customers.
 
 ## Notes
 - Local website preview server may still be running on `http://localhost:5055` (`npx serve site -l 5055`).
