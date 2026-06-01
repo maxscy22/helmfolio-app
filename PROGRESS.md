@@ -1,6 +1,6 @@
 # Helmfolio — Progress notes
 
-_Last session: 2026-06-01. Resume from here._
+_Last updated: 2026-06-01 (evening). Website is LIVE at https://helmfolio.com. Resume from here._
 
 ## What was done this session
 
@@ -32,11 +32,22 @@ _Last session: 2026-06-01. Resume from here._
 - `README.md`: new "Building & releasing the desktop app" section + release checklist.
 - `npm run build` passes (tsc + vite).
 
+### Launch milestones (2026-06-01, evening)
+- **Website LIVE** on Cloudflare Pages → `helmfolio.com` **and** `www.helmfolio.com` both **Active + SSL** (apex bound via Pages Custom domains; deploy with `npx wrangler pages deploy site --project-name helmfolio`).
+- **Anchored pricing**: list **$129/yr**, founding **$99/yr for first 100** via discount code **`Y4MTQWOQ`** (-$30). Shown consistently on site hero, pricing card (with code box + "after first 100, $129" note), and `docs/FAQ.md`.
+- **Features expanded** to 9 cards (added Cycle KPIs, Sharpe/maxDD, leaderboard drill-down, P/L calendar, cost & execution review) + new **"in cycles" explainer** section (what a cycle is + why) — the core $99 justification. PDF card reworded to self-review / your-records (no tax framing).
+- **`docs/FAQ.md` Free vs Pro table** expanded to match site (🔒 = preview in free, unlocked by Pro).
+- **App ↔ site decoupled**: removed hardcoded price from `LicenseModal`; "See plans & upgrade" CTA now opens `APP_WEBSITE + '/#pricing'`. App version injected from `package.json` at build time (`__APP_VERSION__`).
+- **Buy button wired** to real checkout `https://helmfolio.lemonsqueezy.com/checkout/buy/1a405411-...?checkout[discount_code]=Y4MTQWOQ` (code pre-applied). Same URL in `.env` `VITE_LICENSE_PURCHASE_URL`.
+- **Published `v1.0.4`** via `npm run electron:publish` (GH_TOKEN in shell) → GitHub release `maxscy22/helmfolio-app`; auto-update verified working.
+- **Anchor-jump bug fixed**: lazy full-width screenshots shifted layout so `/#pricing` landed on "Connected in about 3 minutes". Added a scroll-to-hash-on-load script in `site/index.html`. **Needs redeploy** (`wrangler pages deploy site`).
+
 ## Pending / TODO (next session)
 1. **Website links** in `site/index.html` (search `TODO`):
    - ✅ `data-download-link` → `https://github.com/maxscy22/helmfolio-app/releases/latest/download/Helmfolio-Setup.exe` (done 2026-06-01).
-   - ⏳ `data-buy-link` → real LemonSqueezy checkout URL (replaces `https://your-store.lemonsqueezy.com`).
-     **BLOCKED**: LemonSqueezy awaiting approval to leave test mode (~2-3 days).
+   - ✅ `data-buy-link` → real Helmfolio LemonSqueezy checkout with `Y4MTQWOQ` pre-applied (done 2026-06-01).
+   - ⏳ **Redeploy site** to push the anchor-jump fix live: `npx wrangler pages deploy site --project-name helmfolio`.
+1b. **LemonSqueezy: leave test mode → LIVE** (the real blocker for taking money). Then run one real purchase to confirm $129 list + `Y4MTQWOQ` shows $99. Optional: "Connect domain" (e.g. `checkout.helmfolio.com`) for branding — if done, update buy link in `site/index.html` + `.env` and redeploy.
 2. ✅ **`electron-builder.yml`**: `publish` set to `github` owner `maxscy22` / repo `helmfolio-app` (public). (done 2026-06-01)
 3. **Auto-update first release**: set `GH_TOKEN`, bump `package.json` version per release,
    `npm run electron:publish`, ensure release is **public + published**. Test update flow

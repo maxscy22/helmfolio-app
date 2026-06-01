@@ -622,6 +622,22 @@
     // Footer year
     document.getElementById('year').textContent = new Date().getFullYear();
 
+    // Anchor fix: lazy-loaded screenshots above the fold can grow AFTER the
+    // browser's initial #hash jump, pushing sections down so a deep link like
+    // /#pricing lands on the wrong section. Re-scroll to the target once the
+    // page (incl. images) has settled. Only runs when the URL has a hash.
+    (function () {
+      if (!location.hash) return;
+      function scrollToHash() {
+        var el = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+        if (el) el.scrollIntoView();
+      }
+      window.addEventListener('load', function () {
+        scrollToHash();
+        setTimeout(scrollToHash, 300);
+      });
+    })();
+
     // Lightbox: click any .zoomable image to view it full-size.
     (function () {
       var box = document.getElementById('lightbox');
