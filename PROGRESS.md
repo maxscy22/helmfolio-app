@@ -1,6 +1,6 @@
 # Helmfolio — Progress notes
 
-_Last updated: 2026-06-01 (~20:26). Website is LIVE at https://helmfolio.com. **v1.0.5 published.** Resume from here._
+_Last updated: 2026-06-01 (~20:34). Website is LIVE at https://helmfolio.com. **v1.0.5 published.** US-market copy refined. Resume from here._
 
 ## Session 2 — analytics, security, guides, US-market scope (2026-06-01 evening)
 
@@ -31,8 +31,13 @@ _Last updated: 2026-06-01 (~20:26). Website is LIVE at https://helmfolio.com. **
 ### Guides nav consistency fixes (site)
 - Guides pages had a shorter nav: added **Privacy** link and reordered to match homepage exactly — **Features / Privacy / Pricing / Guides / FAQ** across `guides/index.html`, `flex-token.html`, `csv-email.html`.
 
+### US-market copy refinement (scope/PnL framing)
+- Reworded all US-market notices per user direction: "fully optimized", frame as **scope limitation** ("multi-currency reporting and local tracking rules ... currently not supported"), and **"affects PnL accuracy"** instead of "figures can be inaccurate" (keeps trust in core product).
+- **Detailed version** → Download-section callout + FAQ answer. **Concise ⚠️ version** ("⚠️ US Market Support Only: ...") → under pricing/checkout + in-app IBKR sync note (app version drops the "before purchasing Pro" CTA).
+- Updated `site/index.html` (3 spots), `src/App.tsx` (~1579), `legal/DISCLAIMER.md` clause 4, `site/legal/disclaimer.html`. `npm run build` passes; site deployed. **App copy needs next release (v1.0.6) to reach users.**
+
 ### Session 2 commits
-- `50b5b2d` analytics · `e7dd6eb` _headers · `6b66a4a` guides + US-market site copy · `45e659b` v1.0.5 app/legal · `b2a4462` PROGRESS · `3505a5d` guides Privacy link · `563ce43` guides nav order.
+- `50b5b2d` analytics · `e7dd6eb` _headers · `6b66a4a` guides + US-market site copy · `45e659b` v1.0.5 app/legal · `b2a4462` PROGRESS · `3505a5d` guides Privacy link · `563ce43` guides nav order · `e8bba2f` PROGRESS · `c65ff1f` US-market copy refinement.
 
 ## What was done this session
 
