@@ -1,6 +1,14 @@
 # Helmfolio — Progress notes
 
-_Last updated: 2026-06-01 (~22:56). Website is LIVE at https://helmfolio.com. **v1.0.5 published; v1.0.6/1.0.7 changes pending release.** US-market copy softened (no more amber boxes); sync-status accumulation bug fixed. Resume from here._
+_Last updated: 2026-06-01 (~23:06). Website is LIVE at https://helmfolio.com (redeployed twice tonight — latest https://2d7fbb23.helmfolio.pages.dev). **v1.0.5 is the published app; `package.json` now bumped to `1.0.7` locally but NOT yet published.** Resume from here._
+
+### NEXT ACTION when resuming (app release v1.0.7)
+- `package.json` is already at `1.0.7` (user bumped). **Pending in-app changes awaiting this release**: US-market in-app copy (`c65ff1f`), license lapse/expiry banner (`9112391`), sync-status accumulation fix (`dc57015`), and the new "Static, non-real-time data" disclaimer clause (`e8abc05`, reaches app via `?raw` import of `legal/DISCLAIMER.md`).
+- Publish: in an EXTERNAL terminal run `$env:GH_TOKEN="<token>"; npm run electron:publish`, then confirm the GitHub release is **out of Draft**.
+
+### "Static, non-real-time data" disclaimer clause — ADDED (commit `e8abc05`), site redeployed
+- New **clause 4** in `legal/DISCLAIMER.md` + `site/legal/disclaimer.html`: app is a **performance-review / statistics tool, not a real-time trading/quoting/execution platform**; all figures are static snapshots as of last import/sync. US-market clause renumbered 4→5, decisions 5→6, warranty 6→7.
+- Website "Last updated" bumped to 2026-06-01. **`legalConfig.ts` `lastUpdated` left at 2026-05-31 on purpose** (shared by EULA/Privacy/Disclaimer — bumping would falsely date the other two). `npm run build` passes.
 
 ### Sync-status accumulation bug — FIXED (commit `dc57015`)
 - **Symptom**: in v1.0.6 the IBKR sync status grew one `Restored from your saved app data at …` line per launch (user saw 3+ stacked lines).
