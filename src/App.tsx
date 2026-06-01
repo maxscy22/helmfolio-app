@@ -2187,19 +2187,16 @@ export default function App() {
           </Section>
         </div>
 
-        <Section title="Unrealized P/L Note" subtitle="True unrealized P/L is calculated only from open-position data.">
-          <div className="rounded-2xl border border-amber-300/20 bg-amber-300/10 p-5 text-sm leading-7 text-amber-50">
-            The dashboard first uses IBKR open-position rows when available. If your file only has Trades, it reconstructs open lots from unmatched buy/sell quantities and marks them using the latest `ClosePrice` in the CSV. This is an inferred unrealized P/L estimate from the report snapshot, not a live market value.
-          </div>
-        </Section>
-
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 text-xs leading-6 text-slate-400">
+        <div className="space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 text-xs leading-6 text-slate-400">
           <p>
             <span className="font-semibold text-slate-200">US Market Only:</span> Optimized exclusively for US Stocks &amp; ETFs (USD). Non-US exchanges and multi-currency tracking are not supported.
           </p>
+          <p>
+            <span className="font-semibold text-slate-200">Unrealized P/L Note:</span> The dashboard first uses IBKR open-position rows when available. If your file only has Trades, it reconstructs open lots from unmatched buy/sell quantities and marks them using the latest `ClosePrice` in the CSV. This is an inferred unrealized P/L estimate from the report snapshot, not a live market value.
+          </p>
         </div>
 
-        <footer className="mt-2 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 text-xs leading-6 text-slate-400">
+        <footer className="mt-2 px-5 py-2 text-xs leading-6 text-slate-400">
           <p>
             <span className="font-semibold text-slate-200">{LEGAL_INFO.appName}</span> is for informational and analytical purposes only and is{' '}
             <span className="font-semibold text-slate-200">not financial, investment, or tax advice</span>. Figures are estimates derived from data you import and may differ from your broker's official records. Not affiliated with Interactive Brokers.
