@@ -57,7 +57,7 @@ Helmfolio is built around IBKR's **365-day** Flex window, and it **merges every 
 
 You can download Helmfolio and use the **free tier** at no cost — including CSV/manual import, core profit & loss, and free market-sentiment indicators.
 
-To unlock the full performance desk — **one-click IBKR auto-sync, risk metrics (Sharpe, max drawdown), benchmark comparison, advanced KPIs (win rate, payoff ratio, profit factor), and themed PDF reports** — you can upgrade to a **Pro license ($99/year)** directly within the app via our secure checkout.
+To unlock the full performance desk — **one-click IBKR auto-sync, risk metrics (Sharpe, max drawdown), benchmark comparison, advanced KPIs (win rate, payoff ratio, profit factor), and themed PDF reports** — you can upgrade to **Pro — $129/year**, or **$99/year for the first 100 customers** with our founding-member discount code at checkout.
 
 ### What's included free vs. Pro?
 
