@@ -66,10 +66,15 @@ To unlock the full performance desk — **one-click IBKR auto-sync, risk metrics
 | CSV & manual import + core P/L | ✅ | ✅ |
 | Market sentiment — VIX, Fear & Greed, AAII | ✅ | ✅ |
 | IBKR one-click auto-sync | — | ✅ |
+| Cycle KPIs — cycle win rate, payoff ratio, profit factor | 🔒 | ✅ |
 | Risk metrics — Sharpe, max drawdown | — | ✅ |
 | Benchmark vs. NASDAQ & S&P 500 | — | ✅ |
-| Advanced KPIs — win rate, payoff, profit factor | 🔒 | ✅ |
+| Symbol leaderboard with cycle drill-down | 🔒 | ✅ |
+| Monthly P/L calendar with day detail | 🔒 | ✅ |
+| Cost & execution review | 🔒 | ✅ |
 | Themed PDF report export | — | ✅ |
+
+> 🔒 = the view is visible in the free tier as a preview, with its key figures unlocked by Pro.
 
 ### Can I use my license on more than one computer?
 

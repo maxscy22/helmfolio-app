@@ -184,20 +184,35 @@
       </div>
 
       <div class="mt-16 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <!-- card template -->
+        <div class="rounded-2xl border border-white/10 bg-panel p-6 transition hover:border-cyan-300/30">
+          <div class="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-400/10 text-cyan-300">
+            <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4z"/></svg>
+          </div>
+          <h3 class="text-lg font-bold text-white">100% local &amp; private</h3>
+          <p class="mt-2 text-sm leading-relaxed text-slate-400">Your trades, NAV history and IBKR credentials live only on your computer, encrypted by your OS. Nothing is uploaded — there's no cloud for anyone to breach.</p>
+        </div>
+
         <div class="rounded-2xl border border-white/10 bg-panel p-6 transition hover:border-cyan-300/30">
           <div class="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-400/10 text-cyan-300">
             <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-3-6.7M21 4v5h-5"/></svg>
           </div>
-          <h3 class="text-lg font-bold text-white">One-click IBKR auto-sync</h3>
+          <h3 class="text-lg font-bold text-white">One-click IBKR sync</h3>
           <p class="mt-2 text-sm leading-relaxed text-slate-400">Pull 365 days of trades, positions, NAV and cash via the official Flex Web Service — straight from your machine to IBKR over HTTPS.</p>
+        </div>
+
+        <div class="rounded-2xl border border-white/10 bg-panel p-6 transition hover:border-cyan-300/30">
+          <div class="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-400/10 text-cyan-300">
+            <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+          </div>
+          <h3 class="text-lg font-bold text-white">Cycle win rate, payoff &amp; profit factor</h3>
+          <p class="mt-2 text-sm leading-relaxed text-slate-400">The statistics traders live by — measured per complete trade <span class="font-medium text-slate-200">cycle</span>, not per fill — so they reveal whether your edge is real, not just noise.</p>
         </div>
 
         <div class="rounded-2xl border border-white/10 bg-panel p-6 transition hover:border-cyan-300/30">
           <div class="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-400/10 text-cyan-300">
             <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
           </div>
-          <h3 class="text-lg font-bold text-white">Risk metrics</h3>
+          <h3 class="text-lg font-bold text-white">Sharpe ratio &amp; max drawdown</h3>
           <p class="mt-2 text-sm leading-relaxed text-slate-400">Sharpe ratio, max drawdown and volatility computed on your real equity curve — know your risk, not just your return.</p>
         </div>
 
@@ -205,16 +220,32 @@
           <div class="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-400/10 text-cyan-300">
             <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5M4 19l5-4 4 3 7-7"/></svg>
           </div>
-          <h3 class="text-lg font-bold text-white">Benchmark comparison</h3>
-          <p class="mt-2 text-sm leading-relaxed text-slate-400">See your portfolio against NASDAQ and the S&P 500 over any period. Are you really beating the market?</p>
+          <h3 class="text-lg font-bold text-white">Benchmark vs NASDAQ &amp; S&amp;P 500</h3>
+          <p class="mt-2 text-sm leading-relaxed text-slate-400">See your portfolio against the major indices over any period. Are you really beating the market, or just riding it?</p>
         </div>
 
         <div class="rounded-2xl border border-white/10 bg-panel p-6 transition hover:border-cyan-300/30">
           <div class="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-400/10 text-cyan-300">
-            <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg>
           </div>
-          <h3 class="text-lg font-bold text-white">Advanced KPIs</h3>
-          <p class="mt-2 text-sm leading-relaxed text-slate-400">Win rate, payoff ratio and profit factor — the trader-grade statistics that reveal whether your edge is real.</p>
+          <h3 class="text-lg font-bold text-white">Symbol leaderboard with drill-down</h3>
+          <p class="mt-2 text-sm leading-relaxed text-slate-400">Rank every ticker you've traded, then open its <span class="font-medium text-slate-200">detail box</span> to inspect each closed cycle — hold time, return % and annualized return.</p>
+        </div>
+
+        <div class="rounded-2xl border border-white/10 bg-panel p-6 transition hover:border-cyan-300/30">
+          <div class="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-400/10 text-cyan-300">
+            <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          </div>
+          <h3 class="text-lg font-bold text-white">Monthly P/L calendar</h3>
+          <p class="mt-2 text-sm leading-relaxed text-slate-400">A colour-coded calendar of realized P/L. Click any day's <span class="font-medium text-slate-200">detail box</span> to see its result and every fill behind it.</p>
+        </div>
+
+        <div class="rounded-2xl border border-white/10 bg-panel p-6 transition hover:border-cyan-300/30">
+          <div class="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-400/10 text-cyan-300">
+            <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 5L5 19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
+          </div>
+          <h3 class="text-lg font-bold text-white">Cost &amp; execution review</h3>
+          <p class="mt-2 text-sm leading-relaxed text-slate-400">See what commissions, fees and withholding tax really cost you — as a share of your P/L — so hidden leakage never slips by unnoticed.</p>
         </div>
 
         <div class="rounded-2xl border border-white/10 bg-panel p-6 transition hover:border-cyan-300/30">
@@ -222,15 +253,41 @@
             <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg>
           </div>
           <h3 class="text-lg font-bold text-white">Themed PDF reports</h3>
-          <p class="mt-2 text-sm leading-relaxed text-slate-400">Export a polished, presentation-ready performance report in your chosen theme — perfect for your own records.</p>
+          <p class="mt-2 text-sm leading-relaxed text-slate-400">Export a polished, presentation-ready report in your chosen theme — built for honest self-review, and so your performance record is always yours to keep.</p>
+        </div>
+      </div>
+
+      <p class="mt-8 text-center text-sm text-slate-400">Plus, free for everyone — live market sentiment: <span class="text-slate-200">VIX, CNN Fear &amp; Greed and AAII</span>.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 4a. CYCLE EXPLAINER                                          -->
+    <!-- ============================================================ -->
+    <section class="border-y border-white/5 bg-white/[0.02]">
+      <div class="mx-auto max-w-5xl px-5 py-24">
+        <div class="mx-auto max-w-2xl text-center">
+          <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3.5 py-1.5 text-xs font-semibold text-cyan-200">The Helmfolio difference</div>
+          <h2 class="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">Measured the way traders think — in cycles</h2>
+          <p class="mt-4 text-lg leading-relaxed text-slate-400">A <span class="font-semibold text-white">cycle</span> is one complete round trip in a symbol: from the moment you open a position until you close it flat again. Scale in, add, trim, scale out — it's still <span class="font-semibold text-white">one cycle, one decision</span>.</p>
         </div>
 
-        <div class="rounded-2xl border border-white/10 bg-panel p-6 transition hover:border-cyan-300/30">
-          <div class="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-400/10 text-cyan-300">
-            <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        <div class="mx-auto mt-8 max-w-3xl rounded-2xl border border-white/10 bg-panel p-6 text-center">
+          <p class="text-base leading-relaxed text-slate-300">Most tools score every <span class="font-medium text-slate-200">fill</span> or every <span class="font-medium text-slate-200">day</span> on its own — which inflates your trade count and distorts your win rate. Helmfolio groups every fill into the trade you actually made, so your statistics judge <span class="font-semibold text-white">decisions, not noise</span>.</p>
+        </div>
+
+        <div class="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
+          <div class="rounded-2xl border border-cyan-300/20 bg-cyan-300/[0.04] p-6">
+            <h3 class="text-base font-bold text-white">Cycle win rate</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">The share of completed cycles that closed in profit — how often your trade ideas actually work.</p>
           </div>
-          <h3 class="text-lg font-bold text-white">Free market sentiment</h3>
-          <p class="mt-2 text-sm leading-relaxed text-slate-400">VIX, CNN Fear &amp; Greed and AAII sentiment built in — free for everyone, because public macro data should be.</p>
+          <div class="rounded-2xl border border-cyan-300/20 bg-cyan-300/[0.04] p-6">
+            <h3 class="text-base font-bold text-white">Cycle payoff ratio</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">Your average winning cycle divided by your average losing cycle — are your winners bigger than your losers?</p>
+          </div>
+          <div class="rounded-2xl border border-cyan-300/20 bg-cyan-300/[0.04] p-6">
+            <h3 class="text-base font-bold text-white">Cycle profit factor</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">Gross profit from your winning cycles over gross loss from the losers — the single number that says if your edge is real.</p>
+          </div>
         </div>
       </div>
     </section>
