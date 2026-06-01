@@ -27,7 +27,17 @@ rely on assumptions, or differ from your broker's official records. Benchmark an
 market reference data may be delayed, incomplete, or inaccurate. Always verify
 figures against your broker's official statements before relying on them.
 
-4. DESIGNED FOR US-MARKET TRADING
+4. STATIC, NON-REAL-TIME DATA
+The Software is a performance-review and statistics tool, not a real-time
+trading, quoting, or order-execution platform. All prices, positions,
+profit/loss, and market reference figures reflect the data as of your most
+recent import or sync and are static snapshots — they are not live, streaming,
+or continuously updated, and may be delayed or out of date by the time you view
+them. Do not use the Software for live trading decisions, order execution, or
+time-sensitive monitoring; always rely on your broker's live platform and
+official records for current information.
+
+5. DESIGNED FOR US-MARKET TRADING
 The Software is fully optimized for US stocks, ETFs, and USD-denominated assets.
 While it can import or sync any IBKR account, multi-currency reporting and local
 tracking rules for non-US markets (for example European, Japanese, or Korean
@@ -35,13 +45,13 @@ exchanges) are currently not supported, which affects profit/loss (PnL) accuracy
 for those assets. Do not rely on the Software for analysis of non-US-market or
 multi-currency trading.
 
-5. YOUR DECISIONS ARE YOUR OWN
+6. YOUR DECISIONS ARE YOUR OWN
 Investing and trading involve substantial risk, including the possible loss of
 principal. Past performance is not indicative of future results. You are solely
 responsible for your own investment decisions and for consulting a qualified,
 licensed professional before making any financial decision.
 
-6. NO WARRANTY / LIMITATION OF LIABILITY
+7. NO WARRANTY / LIMITATION OF LIABILITY
 The Software is provided "as is" without warranty of any kind. To the maximum
 extent permitted by law, {{sellerName}} disclaims all liability for any loss or
 damage arising from your use of, or reliance on, the Software or its output. See
