@@ -19,7 +19,12 @@ export const AAII_HISTORY_LIMIT = 4;
 // (or the user's manual override), so 0 is the correct blank-slate value.
 export const DEFAULT_INITIAL_FUNDING = 0;
 export const DEFAULT_BENCHMARK_START_DATE = '2025-07-01';
-export const restoreStatusSuffixPattern = /(?:\s*Restored from this browser's saved data at .+?\.)+$/;
+// Strips the trailing "Restored from your saved app data at <time>." sentence(s)
+// before re-saving, so the status never accumulates one line per launch. Must
+// stay in sync with the wording generated in App.tsx (desktop: "saved app data",
+// browser: "browser's saved data"). The legacy "this browser's saved data"
+// wording is also matched so older over-accumulated statuses self-heal on load.
+export const restoreStatusSuffixPattern = /(?:\s*Restored from (?:your|this) (?:saved app data|browser's saved data) at .+?\.)+$/;
 
 export const cleanSavedImportStatus = (status: string) => status.replace(restoreStatusSuffixPattern, '').trim();
 
