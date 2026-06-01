@@ -1,6 +1,17 @@
 # Helmfolio — Progress notes
 
-_Last updated: 2026-06-01 (~20:34). Website is LIVE at https://helmfolio.com. **v1.0.5 published.** US-market copy refined. Resume from here._
+_Last updated: 2026-06-01 (~22:56). Website is LIVE at https://helmfolio.com. **v1.0.5 published; v1.0.6/1.0.7 changes pending release.** US-market copy softened (no more amber boxes); sync-status accumulation bug fixed. Resume from here._
+
+### Sync-status accumulation bug — FIXED (commit `dc57015`)
+- **Symptom**: in v1.0.6 the IBKR sync status grew one `Restored from your saved app data at …` line per launch (user saw 3+ stacked lines).
+- **Root cause**: `restoreStatusSuffixPattern` in `src/lib/persistence.ts` matched the OLD wording `"Restored from this browser's saved data at …"`, but `src/App.tsx:384` writes `"Restored from your saved app data at …"` (desktop) / `"…your browser's saved data at …"` (browser). Mismatch → `cleanSavedImportStatus()` never stripped the suffix → it stacked.
+- **Fix**: regex now matches the real wording **and** the legacy form, so over-grown statuses **self-heal on next load**. Added `src/lib/persistence.test.ts` (5 regression tests incl. the many-line case). `npm test`/`npm run build` pass. Needs an app release (suggest **v1.0.7**) to reach users.
+
+### US-market copy SOFTENED on site (2026-06-01 ~22:56) — user felt prior amber warnings scared customers off
+- **Pricing/Get-Pro note**: replaced the amber ⚠️ block with a calm slate line: _"US Market Only: Optimized exclusively for US Stocks & ETFs (USD). Non-US exchanges and multi-currency tracking are not supported."_
+- **FAQ "non-US / international stocks"**: rewritten to lead with strengths (engineered for US stock+options market, syncs any IBKR account, converts base-currency cash) and frame multi-currency as "outside our product scope" + reassuring "works beautifully if US-focused".
+- **Download section**: the amber "Built for US-Market Trading" box was **removed entirely** (felt alarming / made the app look limited).
+- Only `site/index.html` changed (3 spots); legal disclaimer + in-app note left as-is. Redeploy site: `npx wrangler pages deploy site --project-name helmfolio`.
 
 ## Session 2 — analytics, security, guides, US-market scope (2026-06-01 evening)
 
