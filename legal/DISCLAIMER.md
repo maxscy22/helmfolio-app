@@ -27,13 +27,22 @@ rely on assumptions, or differ from your broker's official records. Benchmark an
 market reference data may be delayed, incomplete, or inaccurate. Always verify
 figures against your broker's official statements before relying on them.
 
-4. YOUR DECISIONS ARE YOUR OWN
+4. DESIGNED FOR US-MARKET TRADING
+The Software is built and optimised for trading in US markets — US stocks and
+ETFs denominated in US dollars. While it can import or sync any IBKR account,
+performance figures are most accurate for USD-denominated activity. Trade-level
+profit and loss for non-US, non-USD instruments (for example European, Japanese,
+or Korean shares in their local currencies) is not currency-converted and may be
+inaccurate or misleading. Do not rely on the Software for analysis of non-US-market
+or multi-currency trading.
+
+5. YOUR DECISIONS ARE YOUR OWN
 Investing and trading involve substantial risk, including the possible loss of
 principal. Past performance is not indicative of future results. You are solely
 responsible for your own investment decisions and for consulting a qualified,
 licensed professional before making any financial decision.
 
-5. NO WARRANTY / LIMITATION OF LIABILITY
+6. NO WARRANTY / LIMITATION OF LIABILITY
 The Software is provided "as is" without warranty of any kind. To the maximum
 extent permitted by law, {{sellerName}} disclaims all liability for any loss or
 damage arising from your use of, or reliance on, the Software or its output. See
