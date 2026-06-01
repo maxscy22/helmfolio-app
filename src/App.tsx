@@ -1,7 +1,7 @@
 ﻿import { Component, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, ChangeEvent, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { Activity, Award, BarChart3, BookOpen, Eye, EyeOff, LineChart, Lock, Play, Settings, ShieldCheck, Target, TrendingDown, TrendingUp, Upload, WalletCards } from 'lucide-react';
+import { Activity, Award, BarChart3, BookOpen, Eye, EyeOff, LineChart, Lock, Play, Settings, ShieldAlert, ShieldCheck, Target, TrendingDown, TrendingUp, Upload, WalletCards, X } from 'lucide-react';
 import {
   Bar,
   BarChart as RechartsBarChart,
@@ -49,7 +49,7 @@ import {
 import { money, priceMoney, percent, benchmarkPercent, dateMonthLabel, compactDateLabel, daysBetween } from './lib/formatters';
 import { apiFetch, dashboardStorage, exportDashboardDataFile, hasSecureCredentialStore, importDashboardDataFile, revealDataFolder, revealIbkrCredentials } from './lib/api';
 import { activateLicense, deactivateLicense, loadLicenseState, renewLicenseIfNeeded, type LicenseState } from './lib/license';
-import { isProEntitled } from './lib/featureGate';
+import { isProEntitled, licenseSummary } from './lib/featureGate';
 import { LicenseModal } from './components/LicenseModal';
 import { LegalModal } from './components/LegalModal';
 import { LEGAL_INFO, type LegalDocId } from './lib/legalConfig';
@@ -395,6 +395,10 @@ export default function App() {
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [licenseState, setLicenseState] = useState<LicenseState>({ status: 'none', tier: 'free' });
   const [showLicense, setShowLicense] = useState(false);
+  // Controls the top-of-dashboard banner that proactively tells a paying user
+  // their Pro access just dropped (the term lapsed, or the offline grace window
+  // expired). Without this, the downgrade to Free is completely silent.
+  const [licenseNoticeDismissed, setLicenseNoticeDismissed] = useState(false);
   const [legalDoc, setLegalDoc] = useState<LegalDocId | null>(null);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const dashboardRef = useRef<HTMLElement>(null);
@@ -599,6 +603,15 @@ export default function App() {
       window.removeEventListener('online', handleOnline);
     };
   }, []);
+
+  // Re-arm the lapse/expiry banner each time the license drops out of Pro
+  // (term lapsed, or offline grace expired) so a previously-dismissed notice
+  // reappears on a fresh downgrade, but stays dismissed within the same state.
+  useEffect(() => {
+    if (licenseState.status === 'lapsed' || licenseState.status === 'expired') {
+      setLicenseNoticeDismissed(false);
+    }
+  }, [licenseState.status]);
 
   useEffect(() => {
     if (!isPro) {
@@ -1275,6 +1288,34 @@ export default function App() {
             setShowSettings(false);
           }}
         />
+        {(licenseState.status === 'lapsed' || licenseState.status === 'expired') && !licenseNoticeDismissed && (
+          <div data-pdf-hide className="flex items-start gap-4 rounded-[1.5rem] border border-amber-300/30 bg-amber-400/10 px-5 py-4 shadow-xl shadow-amber-950/10">
+            <ShieldAlert size={22} className="mt-0.5 shrink-0 text-amber-300" />
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-amber-100">
+                {licenseState.status === 'lapsed' ? 'Your Pro license has ended' : 'Pro features are paused'}
+              </p>
+              <p className="mt-1 text-sm leading-6 text-amber-50/85">{licenseSummary(licenseState)}</p>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                className="rounded-2xl bg-amber-300 px-4 py-2 text-sm font-bold text-slate-950 transition hover:bg-amber-200"
+                onClick={() => setShowLicense(true)}
+              >
+                {licenseState.status === 'lapsed' ? 'Renew Pro' : 'View license'}
+              </button>
+              <button
+                type="button"
+                aria-label="Dismiss"
+                className="rounded-xl border border-amber-200/20 p-2 text-amber-100 transition hover:bg-amber-200/10"
+                onClick={() => setLicenseNoticeDismissed(true)}
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        )}
         <header className="overflow-hidden rounded-[2rem] border border-white/10 bg-[var(--dashboard-panel)] shadow-2xl shadow-black/30 backdrop-blur">
           <div className="grid gap-0 lg:grid-cols-[1fr_25rem]">
             <div className="p-7 sm:p-9">
