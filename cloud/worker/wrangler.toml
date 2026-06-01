@@ -1,0 +1,19 @@
+name = "stock-dashboard-for-ibkr-license"
+main = "src/index.js"
+compatibility_date = "2024-09-23"
+
+# Non-secret configuration. Fill in your real LemonSqueezy IDs (optional but
+# recommended so a license from a different product is rejected).
+[vars]
+LS_STORE_ID = "392353"
+LS_PRODUCT_ID = "1101253"
+LS_VARIANT_ID = "1724730"
+JWT_ISSUER = "stock-dashboard-for-ibkr-license"
+# 24-hour offline grace window. A shorter window limits license-sharing abuse and
+# forces frequent online re-validation (which re-checks the LemonSqueezy seat).
+JWT_TTL_SECONDS = "86400"
+
+# Secrets are NOT stored here. Set them with:
+#   wrangler secret put JWT_PRIVATE_KEY
+#   wrangler secret put LEMONSQUEEZY_API_KEY
+# For local dev (`wrangler dev`), put them in cloud/worker/.dev.vars (gitignored).

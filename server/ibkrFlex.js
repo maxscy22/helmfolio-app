@@ -51,11 +51,39 @@ const requestXml = async (url, { attempts = DEFAULT_REQUEST_ATTEMPTS, timeoutMs 
   throw lastError;
 };
 
+// IBKR Flex Web Service error codes that mean the token/account is no longer
+// usable and the user must regenerate it in the IBKR portal. We surface a clear,
+// actionable message for these instead of a generic "request failed".
+const IBKR_TOKEN_ERROR_GUIDANCE = {
+  1011: 'Your IBKR service account is inactive.',
+  1012: 'Your IBKR Flex token has expired.',
+  1013: 'This IBKR Flex token is blocked by an IP restriction.',
+  1015: 'Your IBKR Flex token is invalid.',
+  1016: 'Your IBKR account token is invalid.',
+};
+
+export class IbkrTokenError extends Error {
+  constructor(message, code) {
+    super(message);
+    this.name = 'IbkrTokenError';
+    this.code = code;
+    this.isTokenError = true;
+  }
+}
+
 const assertIbkrSuccess = (payload, stage) => {
   const response = payload?.FlexStatementResponse;
   const status = response?.Status;
   if (status && String(status).toLowerCase() !== 'success') {
     const code = response?.ErrorCode;
+    const numericCode = Number(code);
+    const guidance = IBKR_TOKEN_ERROR_GUIDANCE[numericCode];
+    if (guidance) {
+      throw new IbkrTokenError(
+        `${guidance} Flex tokens expire periodically (about once a year). Generate a new token in the IBKR portal under Settings -> Account Settings -> Flex Web Service, then paste it into the dashboard Settings. (IBKR code ${code})`,
+        numericCode,
+      );
+    }
     const message = response?.ErrorMessage || code || 'Unknown IBKR Flex error';
     throw new Error(`${stage} failed${code ? ` (IBKR code ${code})` : ''}: ${message}`);
   }

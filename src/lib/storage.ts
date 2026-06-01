@@ -1,4 +1,5 @@
-import { SETTINGS_KEY, STORAGE_KEY, type BrowserStorageUsage } from './persistence';
+import { AAII_MANUAL_KEY, SETTINGS_KEY, STORAGE_KEY, type BrowserStorageUsage } from './persistence';
+import { dashboardStorage, hasSecureCredentialStore } from './api';
 
 export const bytesForStorageValue = (value: string | null) => value ? new TextEncoder().encode(value).length : 0;
 
@@ -20,6 +21,27 @@ export const measureLocalStorageBytes = () => {
 };
 
 export const measureBrowserStorageUsage = async (): Promise<BrowserStorageUsage> => {
+  // Read sizes from the durable store so desktop (electron-store) is measured
+  // accurately instead of always reading the empty browser localStorage.
+  const dashboardBytes = bytesForStorageValue(dashboardStorage.getItem(STORAGE_KEY));
+  const settingsBytes = bytesForStorageValue(dashboardStorage.getItem(SETTINGS_KEY));
+
+  if (hasSecureCredentialStore()) {
+    // Desktop: data lives in the electron-store JSON file in userData. There is
+    // no browser-origin quota, so report the total of the known dashboard keys.
+    const aaiiBytes = bytesForStorageValue(dashboardStorage.getItem(AAII_MANUAL_KEY));
+    const totalBytes = dashboardBytes + settingsBytes + aaiiBytes;
+    return {
+      isDesktop: true,
+      dashboardBytes,
+      settingsBytes,
+      localStorageBytes: totalBytes,
+      originUsageBytes: totalBytes,
+      originQuotaBytes: null,
+      updatedAt: new Date().toLocaleString(),
+    };
+  }
+
   let originUsageBytes: number | null = null;
   let originQuotaBytes: number | null = null;
   try {
@@ -31,8 +53,9 @@ export const measureBrowserStorageUsage = async (): Promise<BrowserStorageUsage>
     originQuotaBytes = null;
   }
   return {
-    dashboardBytes: bytesForStorageValue(localStorage.getItem(STORAGE_KEY)),
-    settingsBytes: bytesForStorageValue(localStorage.getItem(SETTINGS_KEY)),
+    isDesktop: false,
+    dashboardBytes,
+    settingsBytes,
     localStorageBytes: measureLocalStorageBytes(),
     originUsageBytes,
     originQuotaBytes,

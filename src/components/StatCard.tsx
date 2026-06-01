@@ -1,4 +1,4 @@
-import { Activity } from 'lucide-react';
+import { Activity, Lock } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -11,9 +11,11 @@ type StatCardProps = {
   detail?: ReactNode;
   valueClassName?: string;
   subClassName?: string;
+  locked?: boolean;
+  onUnlock?: () => void;
 };
 
-export function StatCard({ title, value, sub, icon: Icon, positive, detail, valueClassName, subClassName }: StatCardProps) {
+export function StatCard({ title, value, sub, icon: Icon, positive, detail, valueClassName, subClassName, locked = false, onUnlock }: StatCardProps) {
   const [showDetail, setShowDetail] = useState(false);
   const [detailPosition, setDetailPosition] = useState({ x: 320, y: 180 });
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
@@ -28,10 +30,16 @@ export function StatCard({ title, value, sub, icon: Icon, positive, detail, valu
   };
 
   const openDetail = () => {
+    if (locked) {
+      onUnlock?.();
+      return;
+    }
     if (!detail) return;
     centerDetail();
     setShowDetail(true);
   };
+
+  const interactive = locked || Boolean(detail);
 
   useEffect(() => {
     if (!dragOffset) return;
@@ -46,29 +54,40 @@ export function StatCard({ title, value, sub, icon: Icon, positive, detail, valu
   }, [dragOffset]);
 
   return (
-    <div className={`rounded-3xl border border-white/10 bg-[var(--dashboard-card)] p-5 shadow-2xl shadow-black/20 backdrop-blur ${detail ? 'cursor-pointer transition hover:border-cyan-300/30' : ''}`} role={detail ? 'button' : undefined} tabIndex={detail ? 0 : undefined} onClick={openDetail} onKeyDown={(event) => {
-      if (!detail) return;
+    <div className={`rounded-3xl border border-white/10 bg-[var(--dashboard-card)] p-5 shadow-2xl shadow-black/20 backdrop-blur ${interactive ? 'cursor-pointer transition hover:border-cyan-300/30' : ''}`} role={interactive ? 'button' : undefined} tabIndex={interactive ? 0 : undefined} onClick={openDetail} onKeyDown={(event) => {
+      if (!interactive) return;
       if (event.key === 'Enter' || event.key === ' ') openDetail();
     }}>
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm text-slate-400">{title}</p>
-          <p className={`mt-2 text-3xl font-bold ${valueClassName ?? (positive === undefined ? 'text-white' : positive ? 'text-emerald-300' : 'text-rose-300')}`}>{value}</p>
-          <p className={`mt-2 text-sm ${subClassName ?? 'text-slate-400'}`}>{sub}</p>
+          {locked ? (
+            <p className={`mt-2 inline-flex items-center gap-1.5 text-3xl font-bold ${valueClassName ?? 'text-white'}`} title="Activate Pro to reveal">
+              <span className="pointer-events-none select-none" style={{ filter: 'blur(7px)' }} aria-hidden="true">{value}</span>
+              <Lock size={18} className="shrink-0 text-amber-300/90" aria-hidden="true" />
+            </p>
+          ) : (
+            <p className={`mt-2 text-3xl font-bold ${valueClassName ?? (positive === undefined ? 'text-white' : positive ? 'text-emerald-300' : 'text-rose-300')}`}>{value}</p>
+          )}
+          {locked ? (
+            <p className={`mt-2 text-sm ${subClassName ?? 'text-slate-400'}`}><span className="pointer-events-none select-none" style={{ filter: 'blur(4px)' }} aria-hidden="true">{sub}</span></p>
+          ) : (
+            <p className={`mt-2 text-sm ${subClassName ?? 'text-slate-400'}`}>{sub}</p>
+          )}
         </div>
         <button
-          className={`rounded-2xl bg-cyan-400/10 p-3 text-cyan-300 ${detail ? 'cursor-pointer hover:bg-cyan-400/20' : ''}`}
+          className={`rounded-2xl bg-cyan-400/10 p-3 text-cyan-300 ${interactive ? 'cursor-pointer hover:bg-cyan-400/20' : ''}`}
           type="button"
-          aria-label={detail ? `Show ${title} details` : `${title} icon`}
+          aria-label={locked ? `${title} is a Pro feature` : detail ? `Show ${title} details` : `${title} icon`}
           onClick={(event) => {
             event.stopPropagation();
             openDetail();
           }}
         >
-          <Icon size={22} />
+          {locked ? <Lock size={22} className="text-amber-300/90" /> : <Icon size={22} />}
         </button>
       </div>
-      {detail && showDetail && createPortal(
+      {!locked && detail && showDetail && createPortal(
         <>
         <div className="fixed inset-0 z-[9998] bg-transparent" onClick={(event) => {
           event.stopPropagation();

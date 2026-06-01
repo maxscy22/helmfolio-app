@@ -1,4 +1,5 @@
 import type { RawCash, RawNav, RawPosition, RawTrade } from '../types';
+import { dashboardStorage, hasSecureCredentialStore } from './api';
 import {
   normalizedRawStringByAliases,
   normalizedTradeId,
@@ -13,11 +14,32 @@ export const STORAGE_KEY = 'ibkr-dashboard:last-loaded-data';
 export const SETTINGS_KEY = 'ibkr-dashboard:display-settings';
 export const AAII_MANUAL_KEY = 'ibkr-dashboard:aaii-manual-sentiment';
 export const AAII_HISTORY_LIMIT = 4;
-export const DEFAULT_INITIAL_FUNDING = 206013.63;
+// Neutral default for fresh installs / after "Clear data". Must NOT be a real
+// personal funding figure — the starting NAV auto-derives from imported NAV data
+// (or the user's manual override), so 0 is the correct blank-slate value.
+export const DEFAULT_INITIAL_FUNDING = 0;
 export const DEFAULT_BENCHMARK_START_DATE = '2025-07-01';
 export const restoreStatusSuffixPattern = /(?:\s*Restored from this browser's saved data at .+?\.)+$/;
 
 export const cleanSavedImportStatus = (status: string) => status.replace(restoreStatusSuffixPattern, '').trim();
+
+// One-time migration: when running in the desktop app for the first time after
+// the electron-store switch, copy any data left in the renderer's localStorage
+// (used by the Phase 1/2 builds) into the durable store so users don't lose it.
+(() => {
+  if (!hasSecureCredentialStore()) return; // desktop runtime only
+  if (typeof localStorage === 'undefined') return;
+  try {
+    [STORAGE_KEY, SETTINGS_KEY, AAII_MANUAL_KEY].forEach((key) => {
+      if (dashboardStorage.getItem(key) == null) {
+        const legacy = localStorage.getItem(key);
+        if (legacy != null) dashboardStorage.setItem(key, legacy);
+      }
+    });
+  } catch {
+    // Migration is best-effort; ignore failures.
+  }
+})();
 
 export type PersistedDashboardData = {
   rows: RawTrade[];
@@ -37,9 +59,18 @@ export type PersistedDashboardSettings = {
   themeId: string;
   portraitDataUrl: string;
   displayName: string;
+  benchmarkRangeMode: 'all' | 'portfolio' | 'custom';
+  benchmarkFromDate: string;
+  benchmarkToDate: string;
+  startingNavBasis: 'open' | 'close';
+  useManualStartingNav: boolean;
+  manualStartingNav: number | null;
+  // Master analysis start date. '' = auto (earliest imported trade/NAV date).
+  portfolioStartDate: string;
 };
 
 export type BrowserStorageUsage = {
+  isDesktop: boolean;
   dashboardBytes: number;
   settingsBytes: number;
   localStorageBytes: number;
@@ -136,8 +167,15 @@ export const parseAaiiDateValue = (value: string) => {
 };
 
 export const toAaiiDateInputValue = (value: string) => {
+  // If already YYYY-MM-DD, return as-is to avoid UTC timezone shifts.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
   const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? value : parsed.toISOString().slice(0, 10);
+  if (Number.isNaN(parsed.getTime())) return value;
+  // Use local date components to preserve the intended date regardless of timezone.
+  const year = parsed.getFullYear();
+  const month = String(parsed.getMonth() + 1).padStart(2, '0');
+  const day = String(parsed.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 export const normalizeAaiiManualRows = (rows: AaiiSentimentRow[]) =>
@@ -153,7 +191,7 @@ export const normalizeAaiiManualRows = (rows: AaiiSentimentRow[]) =>
 
 export const loadAaiiManualRows = (): AaiiSentimentRow[] => {
   try {
-    const value = localStorage.getItem(AAII_MANUAL_KEY);
+    const value = dashboardStorage.getItem(AAII_MANUAL_KEY);
     const parsed = value ? JSON.parse(value) : [];
     return Array.isArray(parsed) ? normalizeAaiiManualRows(parsed as AaiiSentimentRow[]).slice(0, AAII_HISTORY_LIMIT) : [];
   } catch {
@@ -170,23 +208,44 @@ export const mergeAaiiSentimentRows = (baseRows: AaiiSentimentRow[], manualRows:
 
 export const loadPersistedDashboardData = (): PersistedDashboardData | null => {
   try {
-    const value = localStorage.getItem(STORAGE_KEY);
+    const value = dashboardStorage.getItem(STORAGE_KEY);
     return value ? JSON.parse(value) as PersistedDashboardData : null;
   } catch {
     return null;
   }
 };
 
+export const defaultDashboardSettings = (): PersistedDashboardSettings => ({
+  themeId: 'command',
+  portraitDataUrl: '',
+  displayName: '',
+  benchmarkRangeMode: 'portfolio',
+  benchmarkFromDate: '',
+  benchmarkToDate: '',
+  startingNavBasis: 'open',
+  useManualStartingNav: false,
+  manualStartingNav: null,
+  portfolioStartDate: '',
+});
+
 export const loadPersistedDashboardSettings = (): PersistedDashboardSettings => {
+  const defaults = defaultDashboardSettings();
   try {
-    const value = localStorage.getItem(SETTINGS_KEY);
+    const value = dashboardStorage.getItem(SETTINGS_KEY);
     const parsed = value ? JSON.parse(value) as Partial<PersistedDashboardSettings> : {};
     return {
-      themeId: parsed.themeId || 'command',
-      portraitDataUrl: parsed.portraitDataUrl || '',
-      displayName: parsed.displayName || '',
+      themeId: parsed.themeId || defaults.themeId,
+      portraitDataUrl: parsed.portraitDataUrl || defaults.portraitDataUrl,
+      displayName: parsed.displayName || defaults.displayName,
+      benchmarkRangeMode: parsed.benchmarkRangeMode === 'all' ? 'all' : parsed.benchmarkRangeMode === 'custom' ? 'custom' : 'portfolio',
+      benchmarkFromDate: typeof parsed.benchmarkFromDate === 'string' ? parsed.benchmarkFromDate : defaults.benchmarkFromDate,
+      benchmarkToDate: typeof parsed.benchmarkToDate === 'string' ? parsed.benchmarkToDate : defaults.benchmarkToDate,
+      startingNavBasis: parsed.startingNavBasis === 'close' ? 'close' : 'open',
+      useManualStartingNav: parsed.useManualStartingNav === true,
+      manualStartingNav: typeof parsed.manualStartingNav === 'number' && Number.isFinite(parsed.manualStartingNav) ? parsed.manualStartingNav : null,
+      portfolioStartDate: typeof parsed.portfolioStartDate === 'string' ? parsed.portfolioStartDate : defaults.portfolioStartDate,
     };
   } catch {
-    return { themeId: 'command', portraitDataUrl: '', displayName: '' };
+    return defaults;
   }
 };

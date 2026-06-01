@@ -1,7 +1,19 @@
 node_modules
 dist
+release
 .env
 *.csv
 *.tsv
 *.xlsx
 *.tsbuildinfo
+
+# Cloudflare Worker local secrets (never commit the JWT private key)
+.dev.vars
+cloud/worker/.dev.vars
+
+# Build artifact: tsc emits this from vite.config.ts (Vite uses the .ts source)
+vite.config.js
+
+# Loose full-res screenshot originals (published/cropped shots live in site/assets/).
+# Kept out of git in case they contain real account data.
+build/*.jpg

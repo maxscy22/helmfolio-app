@@ -1,0 +1,72 @@
+appId: com.helmfolio.desktop
+productName: Helmfolio
+copyright: Copyright © 2026 Max Shing
+
+# Only ship what the app actually needs at runtime. The renderer is the built
+# Vite output in dist/; the Electron entry/preload live in electron/.
+files:
+  - dist/**/*
+  - electron/**/*
+  - package.json
+
+# The Express backend + its dependencies are shipped as unpacked resources
+# (process.resourcesPath/server) and launched by electron/main.cjs. `server/` is a
+# self-contained package: its own server/package.json lists ONLY the backend
+# runtime dependencies, and `server/node_modules` is a production-only install
+# (run `npm install --omit=dev` in server/). We copy that directory as-is, so the
+# installer no longer carries vitest / vite / esbuild / 7zip-bin build tooling.
+extraResources:
+  - from: server
+    to: server
+    filter:
+      - "**/*"
+      - "!**/.bin/**"
+      - "!**/.cache/**"
+
+directories:
+  output: release
+  buildResources: build
+
+# Auto-update feed. electron-builder writes latest.yml + the .blockmap next to the
+# installer on each release; electron-updater (see electron/main.cjs) reads them to
+# detect and download updates.
+#   - Publish a release with:  npm run electron:publish   (needs GH_TOKEN env var)
+#   - For unauthenticated in-app updates, the GitHub RELEASE must be PUBLIC.
+#     (Private releases would require embedding a token in the app — insecure.)
+publish:
+  provider: github
+  owner: maxscy22
+  repo: helmfolio-app
+
+win:
+  target:
+    - nsis
+  icon: build/icon.ico
+  # Fixed, version-less installer name so the public download URL never changes
+  # across releases (e.g. https://.../releases/latest/download/Helmfolio-Setup.exe).
+  # Auto-update still works: electron-updater reads the real version from latest.yml,
+  # not from the filename.
+  artifactName: ${productName}-Setup.${ext}
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  installerHeaderIcon: build/icon.ico
+  # EULA shown during installation. Edit build/eula.txt (fill in the placeholders)
+  # before publishing. The in-app Settings -> Legal section shows the full set.
+  license: build/eula.txt
+
+mac:
+  target:
+    - dmg
+  icon: build/icon.icns
+  category: public.app-category.finance
+
+linux:
+  target:
+    - AppImage
+  icon: build/icon.png
+  category: Office

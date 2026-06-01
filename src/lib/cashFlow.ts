@@ -47,7 +47,7 @@ const navPointFromRow = (row: RawNav) => {
   const explicitChange = numberFromRaw(explicitChangeValue);
   const startingValue = numberFromRaw(valueByAliases(row, navStartingValueAliases));
   const change = explicitChange || (value && startingValue ? value - startingValue : 0);
-  return { date, value, change, hasExplicitChange };
+  return { date, value, change, hasExplicitChange, startingValue };
 };
 
 const navCurveFromRows = (navRows: RawNav[]) => navRows
@@ -65,6 +65,19 @@ export const sortedNavCurveFromRows = (navRows: RawNav[]) => Array.from(navCurve
 export const navValueForDate = (navRows: RawNav[], date: string) => {
   const candidates = sortedNavCurveFromRows(navRows);
   return [...candidates].reverse().find((row) => row.date <= date)?.value ?? null;
+};
+
+// Opening NAV at the start of `date`: the close of the prior NAV day (which is the
+// open of `date`). If `date` is on/before the earliest NAV row, use that row's
+// StartingValue (the original funding basis) when present, else its close.
+export const navOpenValueForDate = (navRows: RawNav[], date: string) => {
+  const curve = sortedNavCurveFromRows(navRows);
+  if (!curve.length) return null;
+  const index = curve.findIndex((row) => row.date >= date);
+  if (index === -1) return curve[curve.length - 1].value;
+  if (index > 0) return curve[index - 1].value;
+  const first = curve[0];
+  return first.startingValue && first.startingValue > 0 ? first.startingValue : first.value;
 };
 
 export const latestNavValue = (navRows: RawNav[]) => {
@@ -128,7 +141,10 @@ export const withholdingTaxRefundDetailRows = (cashRows: RawCash[], monthsWindow
     .sort((a, b) => b.date.localeCompare(a.date));
 };
 
-export const cashTransactionWithdrawalDetailRows = (cashRows: RawCash[]) => cashRows
+// All dated "Deposits/Withdrawals" Cash Transactions rows in base currency, BOTH
+// signs (deposits positive, withdrawals negative). Shared by the withdrawals-only
+// summary card and the cash-flow-adjusted risk/return metrics.
+const cashTransactionDepositWithdrawalRows = (cashRows: RawCash[]) => cashRows
   .map((row) => {
     const type = String(valueByAliases(row, ['Type']) ?? '').trim();
     const rawValue = valueByAliases(row, ['Amount']);
@@ -148,10 +164,27 @@ export const cashTransactionWithdrawalDetailRows = (cashRows: RawCash[]) => cash
       type,
     };
   })
-  .filter((row) => row.date && row.type.toLowerCase() === 'deposits/withdrawals' && row.amount < 0 && row.rawValue !== undefined && row.rawValue !== null && String(row.rawValue).trim() !== '')
+  .filter((row) => row.date && row.type.toLowerCase() === 'deposits/withdrawals' && row.rawValue !== undefined && row.rawValue !== null && String(row.rawValue).trim() !== '');
+
+// Withdrawals only (amount < 0). Drives the "Net Deposits / Withdrawals" summary
+// card, which intentionally reports withdrawals (capital taken out).
+export const cashTransactionWithdrawalDetailRows = (cashRows: RawCash[]) => cashTransactionDepositWithdrawalRows(cashRows)
+  .filter((row) => row.amount < 0)
   .sort((a, b) => a.date.localeCompare(b.date));
 
 export const cashTransactionFlowRowsFromRows = (cashRows: RawCash[]) => Array.from(cashTransactionWithdrawalDetailRows(cashRows)
+  .reduce((byDate, row) => byDate.set(row.date, (byDate.get(row.date) ?? 0) + row.value), new Map<string, number>())
+  .entries())
+  .map(([date, value]) => ({ date, value }))
+  .sort((a, b) => a.date.localeCompare(b.date));
+
+// Net external cash flow per date including BOTH deposits and withdrawals. This is
+// the correct input for cash-flow-adjusted RETURN/RISK metrics: a mid-period
+// deposit must be neutralized just like a withdrawal so it does not show up as a
+// fake gain. (Initial funding deposits are excluded by the caller, which only
+// applies flows that fall AFTER the analysis start/baseline date.)
+export const cashTransactionNetFlowRowsFromRows = (cashRows: RawCash[]) => Array.from(cashTransactionDepositWithdrawalRows(cashRows)
+  .filter((row) => row.amount !== 0)
   .reduce((byDate, row) => byDate.set(row.date, (byDate.get(row.date) ?? 0) + row.value), new Map<string, number>())
   .entries())
   .map(([date, value]) => ({ date, value }))

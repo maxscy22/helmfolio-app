@@ -1,6 +1,13 @@
-# IBKR Trade Performance Dashboard
+# Helmfolio
 
-A local React dashboard for reviewing the last 365 calendar days of IBKR Flex Query trade data.
+**Take the helm of your trading performance. Built for IBKR traders.**
+
+A local-first React desktop app for reviewing the last 365 calendar days of IBKR Flex Query trade data. Website: https://helmfolio.com · Support: support@helmfolio.com
+
+> **Disclaimer:** This is an independent third-party tool. It is **not affiliated with,
+> endorsed by, or sponsored by Interactive Brokers LLC**. "Interactive Brokers", "IBKR",
+> and related marks are trademarks of Interactive Brokers LLC and are used here only to
+> describe compatibility with the IBKR Flex Web Service.
 
 ## One-click open on Windows
 
@@ -90,6 +97,44 @@ The app is designed around your listed IBKR fields and currently uses these fiel
 - `Buy/Sell`
 - `Order Type`
 - `Is API Order`
+
+## Building & releasing the desktop app
+
+The installer is built with electron-builder and auto-updates via electron-updater
+(GitHub provider). The Windows artifact has a **fixed, version-less filename**
+(`Helmfolio-Setup.exe`) so the website download URL never changes across releases.
+
+### Build locally (no publish)
+
+- `npm run electron:dir` — unpacked build for quick testing (no installer).
+- `npm run electron:build` — full installer in `release/Helmfolio-Setup.exe`.
+
+### One-time setup before the first release
+
+1. In `electron-builder.yml`, set the `publish:` `owner` and `repo` to your real GitHub
+   account and repository (currently `YOUR_GITHUB_USERNAME` / `YOUR_REPO_NAME`).
+2. Create a GitHub **Personal Access Token** with `repo` scope and expose it as the
+   `GH_TOKEN` environment variable in your shell.
+
+### Release checklist (every new version)
+
+1. **Bump the version** in `package.json` (e.g. `1.0.0` → `1.0.1`). The updater detects a
+   new release by comparing this version, so it must increase every time.
+2. Run tests / type-check: `npm test` and `npm run build`.
+3. Publish: `npm run electron:publish`. This builds and uploads `Helmfolio-Setup.exe`,
+   `latest.yml`, and the `.blockmap` to a GitHub release.
+4. On GitHub, make sure the release is **published (not a draft)** and **public** — in-app
+   auto-update fetches the feed without authentication, so a private release would require
+   embedding a token (insecure). The repo can be private; only the release needs to be public.
+5. Point the website download button (`site/index.html`, `data-download-link`) to:
+   `https://github.com/<owner>/<repo>/releases/latest/download/Helmfolio-Setup.exe`
+
+### How auto-update behaves
+
+- On launch (packaged builds only), the app checks for updates and downloads any newer
+  version in the background, then prompts **Restart now / Later**.
+- Users can also trigger a check manually in **Settings → Help & support → Check for updates**.
+- In `npm run dev` / browser there is no updater; the check reports it is desktop-only.
 
 ## Security notes
 

@@ -1,18 +1,23 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import { promises as fs } from 'node:fs';
-import path from 'node:path';
+import crypto from 'node:crypto';
+import machineId from 'node-machine-id';
 import { fetchIbkrFlexStatement } from './ibkrFlex.js';
 import { fetchMarketReferenceData, fetchYtdBenchmarks } from './benchmarks.js';
+import { LICENSE_PUBLIC_KEY } from './licenseConfig.js';
 
 const app = express();
-const port = Number(process.env.PORT || 8787);
+// Port 0 lets the OS assign a free port (used when Electron launches the backend
+// so we never expose a predictable, fixed 8787). Falls back to 8787 in dev.
+const port = Number(process.env.PORT ?? 8787);
+// Always bind to loopback only. Never 0.0.0.0 — that would expose the API to the LAN.
 const host = process.env.HOST || '127.0.0.1';
 const allowedOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173,http://127.0.0.1:5173').split(',').map((origin) => origin.trim());
-const projectRoot = path.resolve(process.cwd());
-const excludedBackupDirectories = new Set(['.git', 'node_modules', 'dist', '.vite']);
-const excludedBackupFiles = new Set(['.DS_Store']);
+// Per-launch session secret injected by the Electron main process. When set, every
+// request must carry a matching X-Session-Token header, blocking other local
+// processes, LAN devices, and malicious browser scripts from reaching the API.
+const sessionToken = process.env.SESSION_TOKEN || '';
 let activeIbkrFlexImport = null;
 
 app.use(cors({
@@ -26,44 +31,90 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Session-token gate (active only when SESSION_TOKEN is provided, e.g. inside the
+// packaged Electron app). The health check stays open so the launcher can probe it.
+app.use((request, response, next) => {
+  if (!sessionToken) {
+    next();
+    return;
+  }
+  if (request.path === '/api/health') {
+    next();
+    return;
+  }
+  const provided = request.get('X-Session-Token');
+  if (provided && provided === sessionToken) {
+    next();
+    return;
+  }
+  response.status(403).json({ error: 'Forbidden: missing or invalid session token for this local dashboard API.' });
+});
+
 app.get('/api/health', (_request, response) => {
   response.json({ ok: true });
 });
 
-const listBackupFiles = async (directory, relativeDirectory = '') => {
-  const entries = await fs.readdir(directory, { withFileTypes: true });
-  const files = [];
-  for (const entry of entries) {
-    if (entry.isDirectory() && excludedBackupDirectories.has(entry.name)) continue;
-    if (entry.isFile() && excludedBackupFiles.has(entry.name)) continue;
-    const absolutePath = path.join(directory, entry.name);
-    const relativePath = path.join(relativeDirectory, entry.name).replaceAll('\\', '/');
-    if (entry.isDirectory()) {
-      files.push(...await listBackupFiles(absolutePath, relativePath));
-      continue;
-    }
-    if (!entry.isFile()) continue;
-    const contentBase64 = await fs.readFile(absolutePath, 'base64');
-    files.push({ path: relativePath, contentBase64 });
+// --- License enforcement ------------------------------------------------------
+// Premium routes require a valid Ed25519-signed JWT (issued by the license
+// Worker) in the X-License-Token header. This is the real paywall: repacking the
+// frontend to force-show paid components cannot bypass it. Verification uses the
+// same public key embedded in the app, plus expiry and device-binding checks.
+const { machineIdSync } = machineId;
+const deviceId = (() => {
+  try {
+    return machineIdSync();
+  } catch {
+    return '';
   }
-  return files;
+})();
+
+let licensePublicKey = null;
+try {
+  licensePublicKey = crypto.createPublicKey({ key: Buffer.from(LICENSE_PUBLIC_KEY, 'base64'), format: 'der', type: 'spki' });
+} catch (error) {
+  console.error('Invalid LICENSE_PUBLIC_KEY — premium routes will be denied:', error);
+}
+
+const fromBase64Url = (segment) => Buffer.from(segment.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+
+const verifyLicenseToken = (token) => {
+  if (!licensePublicKey) return { valid: false, reason: 'server' };
+  try {
+    const parts = String(token).split('.');
+    if (parts.length !== 3) return { valid: false, reason: 'malformed' };
+    const ok = crypto.verify(null, Buffer.from(`${parts[0]}.${parts[1]}`), licensePublicKey, fromBase64Url(parts[2]));
+    if (!ok) return { valid: false, reason: 'signature' };
+    const claims = JSON.parse(fromBase64Url(parts[1]).toString('utf8'));
+    const now = Math.floor(Date.now() / 1000);
+    if (claims.exp && now >= claims.exp) return { valid: false, reason: 'expired' };
+    if (deviceId && claims.device && claims.device !== deviceId) return { valid: false, reason: 'device' };
+    if (claims.tier !== 'pro') return { valid: false, reason: 'tier' };
+    return { valid: true, claims };
+  } catch {
+    return { valid: false, reason: 'malformed' };
+  }
 };
 
-app.get('/api/project/backup', async (_request, response) => {
-  try {
-    const files = await listBackupFiles(projectRoot);
-    response.json({
-      projectName: path.basename(projectRoot),
-      createdAt: new Date().toISOString(),
-      excluded: ['.git/', 'node_modules/', 'dist/', '.vite/'],
-      files,
-    });
-  } catch (error) {
-    response.status(500).json({ error: error instanceof Error ? error.message : 'Failed to create project backup.' });
+const requireLicense = (request, response, next) => {
+  // Only enforce when launched by the desktop shell (SESSION_TOKEN set). Plain
+  // browser dev (no session token) keeps the gate off so development isn't blocked.
+  if (!sessionToken) {
+    next();
+    return;
   }
-});
+  const result = verifyLicenseToken(request.get('X-License-Token') || '');
+  if (result.valid) {
+    next();
+    return;
+  }
+  response.status(402).json({
+    error: 'A valid Pro license is required for this feature.',
+    licenseRequired: true,
+    reason: result.reason || 'none',
+  });
+};
 
-app.get('/api/benchmarks/ytd', async (request, response) => {
+app.get('/api/benchmarks/ytd', requireLicense, async (request, response) => {
   try {
     response.json(await fetchYtdBenchmarks({
       startDate: typeof request.query.start === 'string' ? request.query.start : undefined,
@@ -74,6 +125,7 @@ app.get('/api/benchmarks/ytd', async (request, response) => {
   }
 });
 
+// Market sentiment (VIX, Fear & Greed, AAII) is free, public macro data — not gated.
 app.get('/api/reference/market', async (request, response) => {
   try {
     response.json(await fetchMarketReferenceData({ forceRefresh: request.query.refresh === '1' }));
@@ -82,15 +134,24 @@ app.get('/api/reference/market', async (request, response) => {
   }
 });
 
-app.post('/api/ibkr/flex/trades', async (_request, response) => {
+app.post('/api/ibkr/flex/trades', requireLicense, async (request, response) => {
   if (activeIbkrFlexImport) {
     response.status(409).json({ error: 'An IBKR Flex import is already running. Please wait for the current request to finish before starting another one.' });
     return;
   }
+  // Prefer credentials passed per-request from the client (Electron secure store).
+  // Fall back to .env for browser dev / standalone server use.
+  const body = request.body ?? {};
+  const token = (typeof body.token === 'string' && body.token.trim()) || process.env.IBKR_FLEX_TOKEN;
+  const queryId = (typeof body.queryId === 'string' && body.queryId.trim()) || process.env.IBKR_FLEX_QUERY_ID;
+  if (!token || !queryId) {
+    response.status(400).json({ error: 'IBKR Flex token and query ID are required. Open Settings and enter your IBKR Flex Web Service token and Flex Query ID.' });
+    return;
+  }
   try {
     activeIbkrFlexImport = fetchIbkrFlexStatement({
-      token: process.env.IBKR_FLEX_TOKEN,
-      queryId: process.env.IBKR_FLEX_QUERY_ID,
+      token,
+      queryId,
       requestTimeoutMs: Number(process.env.IBKR_FLEX_REQUEST_TIMEOUT_MS || 30000),
       requestAttempts: Number(process.env.IBKR_FLEX_REQUEST_ATTEMPTS || 3),
       maxAttempts: Number(process.env.IBKR_FLEX_POLL_ATTEMPTS || 30),
@@ -110,12 +171,22 @@ app.post('/api/ibkr/flex/trades', async (_request, response) => {
       importedAt: new Date().toISOString(),
     });
   } catch (error) {
+    // Token expired/invalid → 401 with a clear, actionable message and a flag the
+    // client can use to highlight the credentials section.
+    if (error && error.isTokenError) {
+      response.status(401).json({ error: error.message, tokenError: true, ibkrCode: error.code });
+      return;
+    }
     response.status(500).json({ error: error instanceof Error ? error.message : 'Failed to import IBKR Flex trades.' });
   } finally {
     activeIbkrFlexImport = null;
   }
 });
 
-app.listen(port, host, () => {
-  console.log(`IBKR importer API listening on http://${host}:${port}`);
+const server = app.listen(port, host, () => {
+  const actualPort = server.address().port;
+  console.log(`IBKR importer API listening on http://${host}:${actualPort}`);
+  // Machine-readable line so the Electron main process can discover the OS-assigned
+  // port when it launches the backend with PORT=0.
+  console.log(`PORT_READY:${actualPort}`);
 });

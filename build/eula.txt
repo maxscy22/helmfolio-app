@@ -1,0 +1,64 @@
+HELMFOLIO - END USER LICENSE AGREEMENT
+
+Last updated: 2026-05-31
+
+This End User License Agreement ("Agreement") is a legal agreement between you
+("Licensee") and Max Shing ("Licensor") governing your use of the desktop
+software application "Helmfolio" and any associated updates,
+documentation, and services (the "Software").
+
+BY INSTALLING, ACTIVATING, OR USING THE SOFTWARE, YOU AGREE TO BE BOUND BY THIS
+AGREEMENT. IF YOU DO NOT AGREE, DO NOT INSTALL OR USE THE SOFTWARE.
+
+1. LICENSE GRANT. Subject to your compliance with this Agreement and payment of
+applicable fees, the Licensor grants you a personal, non-exclusive,
+non-transferable, revocable license to install and use the Software on the number
+of devices permitted by your license key, for your own personal use.
+
+2. LICENSE KEYS. The Software is licensed, not sold. Use of certain features
+requires a valid license key limited to a maximum number of activated devices. The
+Software may periodically validate your license. You may not share, resell, or
+circumvent license keys or activation limits.
+
+3. RESTRICTIONS. You may not copy, modify, reverse engineer, decompile, rent,
+lease, sublicense, or distribute the Software, except as expressly permitted or
+required by law.
+
+4. OWNERSHIP. The Software is owned by the Licensor and protected by intellectual
+property laws. All rights not expressly granted are reserved.
+
+5. NOT FINANCIAL ADVICE. The Software is for informational and analytical purposes
+only and does not provide financial, investment, trading, legal, accounting, or
+tax advice. You are solely responsible for your investment decisions. The Software
+is not affiliated with, endorsed by, or sponsored by Interactive Brokers or any
+other broker, exchange, or data provider.
+
+6. PRIVACY. The Software is local-first. Your trading data, credentials, and
+settings are stored on your device. License activation sends your license key and
+a non-identifying device identifier to the Licensor's licensing service and to the
+payment/licensing provider (Lemon Squeezy).
+
+7. DISCLAIMER OF WARRANTIES. THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING MERCHANTABILITY, FITNESS FOR A PARTICULAR
+PURPOSE, ACCURACY, AND NON-INFRINGEMENT. THE LICENSOR DOES NOT WARRANT THAT THE
+SOFTWARE OR ANY CALCULATIONS WILL BE ERROR-FREE, UNINTERRUPTED, OR ACCURATE.
+
+8. LIMITATION OF LIABILITY. TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE LICENSOR
+WILL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR
+PUNITIVE DAMAGES, OR FOR ANY LOSS OF PROFITS, DATA, OR TRADING LOSSES, ARISING FROM
+YOUR USE OF THE SOFTWARE. THE LICENSOR'S TOTAL LIABILITY WILL NOT EXCEED THE AMOUNT
+YOU PAID FOR THE SOFTWARE IN THE PRECEDING TWELVE (12) MONTHS.
+
+9. TERMINATION. This Agreement is effective until terminated and terminates
+automatically if you breach any term. Upon termination you must cease use and
+delete all copies.
+
+10. GOVERNING LAW. This Agreement is governed by the laws of Hong Kong,
+without regard to conflict-of-laws principles, subject to mandatory consumer
+protections of your country of residence.
+
+11. ENTIRE AGREEMENT. This Agreement, together with the Privacy Policy and the Not
+Financial Advice Disclaimer (available within the Software), constitutes the entire
+agreement regarding the Software.
+
+Contact: support@helmfolio.com

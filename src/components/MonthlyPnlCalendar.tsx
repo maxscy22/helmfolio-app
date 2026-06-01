@@ -1,7 +1,13 @@
-import { useEffect, useState } from 'react';
+import { Lock } from 'lucide-react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { DashboardStats, Trade } from '../types';
 import { money } from '../lib/formatters';
 import { tradeDateKey, tradeSideLabel } from '../lib/trades';
+
+const safeMoney = (value: number, privacyMode: boolean) => {
+  if (privacyMode) return '****';
+  return money(value);
+};
 
 type CalendarDay = {
   date: string;
@@ -37,8 +43,14 @@ const buildCalendarWeeks = (month: string, dailyStats: DashboardStats['byDay']):
   }));
 };
 
-export function MonthlyPnlCalendar({ month, dailyStats, trades, onPrevious, onNext }: { month: string; dailyStats: DashboardStats['byDay']; trades: Trade[]; onPrevious: () => void; onNext: () => void }) {
+export function MonthlyPnlCalendar({ month, dailyStats, trades, onPrevious, onNext, isPrivacyMode = false, locked = false, onUnlock }: { month: string; dailyStats: DashboardStats['byDay']; trades: Trade[]; onPrevious: () => void; onNext: () => void; isPrivacyMode?: boolean; locked?: boolean; onUnlock?: () => void }) {
+  const maskMoney = (value: number, reveal = false): ReactNode => (locked && !reveal
+    ? <span className="pointer-events-none select-none" style={{ filter: 'blur(5px)' }} aria-hidden="true">{safeMoney(value, isPrivacyMode)}</span>
+    : safeMoney(value, isPrivacyMode));
   const weeks = buildCalendarWeeks(month, dailyStats);
+  // Free teaser: reveal the first day in the displayed month that has trades so
+  // a non-Pro user can see and click one real day; the rest stay blurred.
+  const previewDate = locked ? (weeks.flat().find((day) => day.inMonth && day.trades > 0)?.date ?? null) : null;
   const monthStats = dailyStats.filter((day) => day.date.startsWith(month));
   const monthTotal = monthStats.reduce((total, day) => total + day.realizedPnl, 0);
   const monthTrades = monthStats.reduce((total, day) => total + day.trades, 0);
@@ -74,7 +86,7 @@ export function MonthlyPnlCalendar({ month, dailyStats, trades, onPrevious, onNe
         <div>
           <h3 className="text-2xl font-bold text-white">{monthLabel(month)}</h3>
           <p className={`mt-1 text-sm font-semibold ${monthTotal >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
-            Monthly realized P/L {money(monthTotal)} · {monthTrades} fills
+            Monthly realized P/L {maskMoney(monthTotal)} · {monthTrades} fills
           </p>
         </div>
         <div className="flex gap-2">
@@ -93,16 +105,19 @@ export function MonthlyPnlCalendar({ month, dailyStats, trades, onPrevious, onNe
               {week.map((day) => (
                 <div
                   key={day.date}
-                  className={`min-h-24 rounded-2xl border p-3 ${day.trades ? 'cursor-pointer hover:bg-white/[0.08]' : ''} ${day.inMonth ? 'border-white/10 bg-white/[0.04]' : 'border-white/5 bg-white/[0.015] opacity-40'}`}
-                  role={day.trades ? 'button' : undefined}
-                  tabIndex={day.trades ? 0 : undefined}
+                  className={`min-h-24 rounded-2xl border p-3 ${day.trades || locked ? 'cursor-pointer hover:bg-white/[0.08]' : ''} ${locked && day.date === previewDate ? 'ring-1 ring-emerald-300/50' : ''} ${day.inMonth ? 'border-white/10 bg-white/[0.04]' : 'border-white/5 bg-white/[0.015] opacity-40'}`}
+                  role={day.trades || locked ? 'button' : undefined}
+                  tabIndex={day.trades || locked ? 0 : undefined}
                   onClick={() => {
+                    if (locked && day.date !== previewDate) { onUnlock?.(); return; }
                     if (!day.trades) return;
                     setActiveDate(day.date);
                     centerTradeDetailPopover();
                   }}
                   onKeyDown={(event) => {
-                    if (!day.trades || (event.key !== 'Enter' && event.key !== ' ')) return;
+                    if (event.key !== 'Enter' && event.key !== ' ') return;
+                    if (locked && day.date !== previewDate) { event.preventDefault(); onUnlock?.(); return; }
+                    if (!day.trades) return;
                     event.preventDefault();
                     setActiveDate(day.date);
                     centerTradeDetailPopover();
@@ -110,20 +125,32 @@ export function MonthlyPnlCalendar({ month, dailyStats, trades, onPrevious, onNe
                 >
                   <div className="flex items-start justify-between gap-2">
                     <span className="font-semibold text-slate-300">{day.day}</span>
-                    {!!day.trades && <span className="rounded-full bg-cyan-300/10 px-2 py-0.5 text-[0.65rem] text-cyan-200">{day.trades}</span>}
+                    <div className="flex items-center gap-1">
+                      {locked && day.date === previewDate && <span className="rounded-full border border-emerald-300/30 bg-emerald-300/10 px-1.5 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wide text-emerald-200">Preview</span>}
+                      {!!day.trades && <span className="rounded-full bg-cyan-300/10 px-2 py-0.5 text-[0.65rem] text-cyan-200">{day.trades}</span>}
+                    </div>
                   </div>
-                  <p className={`mt-4 text-sm font-bold ${day.realizedPnl > 0 ? 'text-emerald-300' : day.realizedPnl < 0 ? 'text-rose-300' : 'text-slate-500'}`}>{day.realizedPnl ? money(day.realizedPnl) : '-'}</p>
+                  <p className={`mt-4 text-sm font-bold ${day.realizedPnl > 0 ? 'text-emerald-300' : day.realizedPnl < 0 ? 'text-rose-300' : 'text-slate-500'}`}>{day.realizedPnl ? maskMoney(day.realizedPnl, day.date === previewDate) : '-'}</p>
                   <p className="mt-1 text-[0.65rem] text-slate-500">Daily realized P/L</p>
                 </div>
               ))}
               <div className={`flex min-h-24 flex-col justify-center rounded-2xl border border-white/10 bg-white/[0.06] p-3 font-bold ${weekTotal >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
-                <span>{money(weekTotal)}</span>
+                <span>{maskMoney(weekTotal)}</span>
                 <span className="mt-1 text-[0.65rem] font-medium text-slate-400">Week {weekIndex + 1}</span>
               </div>
             </div>
           );
         })}
       </div>
+      {locked && (
+        <button
+          type="button"
+          onClick={onUnlock}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-amber-300/30 bg-amber-300/10 px-4 py-3 text-sm font-semibold text-amber-100 transition hover:bg-amber-300/20"
+        >
+          <Lock size={15} /> {previewDate ? 'One day revealed · Activate Pro to unlock the full calendar' : 'Activate Pro to unlock daily P/L'}
+        </button>
+      )}
       {activeDate && (
         <div
           className="fixed z-50 max-h-[30rem] w-[38rem] overflow-hidden rounded-2xl border border-cyan-300/20 bg-slate-950/95 shadow-2xl shadow-black/40 backdrop-blur"
@@ -136,7 +163,7 @@ export function MonthlyPnlCalendar({ month, dailyStats, trades, onPrevious, onNe
             <div>
               <p className="font-semibold text-white">{activeDate} fill details</p>
               <p className={`text-xs font-semibold ${activeDayPnl >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
-                Daily realized P/L {money(activeDayPnl)} · {activeTrades.length} fills
+                Daily realized P/L {safeMoney(activeDayPnl, isPrivacyMode)} · {activeTrades.length} fills
               </p>
             </div>
             <button className="rounded-lg px-2 py-1 text-sm text-slate-300 hover:bg-white/10 hover:text-white" type="button" onClick={() => setActiveDate(null)}>Close</button>
@@ -159,7 +186,7 @@ export function MonthlyPnlCalendar({ month, dailyStats, trades, onPrevious, onNe
                     <td className="px-3 py-2 font-medium text-white">{trade.symbol}</td>
                     <td className="px-3 py-2 text-right">{trade.quantity}</td>
                     <td className="px-3 py-2 text-right">{trade.price.toFixed(2)}</td>
-                    <td className={`px-3 py-2 text-right font-semibold ${trade.realizedPnl >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>{money(trade.realizedPnl)}</td>
+                    <td className={`px-3 py-2 text-right font-semibold ${trade.realizedPnl >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>{safeMoney(trade.realizedPnl, isPrivacyMode)}</td>
                   </tr>
                 ))}
                 {!activeTrades.length && (

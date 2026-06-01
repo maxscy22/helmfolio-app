@@ -1,7 +1,17 @@
-import { Award } from 'lucide-react';
+import { Award, Lock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { SymbolStats, TradeCycle } from '../types';
 import { compactDateLabel, daysBetween, money, percent, priceMoney } from '../lib/formatters';
+
+const safeMoney = (value: number, privacyMode: boolean) => {
+  if (privacyMode) return '****';
+  return money(value);
+};
+
+const safePriceMoney = (value: number, privacyMode: boolean) => {
+  if (privacyMode) return '****';
+  return priceMoney(value);
+};
 
 const rankStyle = (index: number) => {
   if (index === 0) return { label: '#1', className: 'text-amber-300', iconClassName: 'fill-amber-300/20 text-amber-300' };
@@ -10,7 +20,13 @@ const rankStyle = (index: number) => {
   return { label: `#${index + 1}`, className: 'text-cyan-200', iconClassName: 'text-cyan-200' };
 };
 
-export function SymbolTable({ rows, showRank = false, cycles = [] }: { rows: SymbolStats[]; showRank?: boolean; cycles?: TradeCycle[] }) {
+export function SymbolTable({ rows, showRank = false, cycles = [], isPrivacyMode = false, locked = false, previewRowIndex, onUnlock }: { rows: SymbolStats[]; showRank?: boolean; cycles?: TradeCycle[]; isPrivacyMode?: boolean; locked?: boolean; previewRowIndex?: number; onUnlock?: () => void }) {
+  // In preview mode one row stays crisp and clickable (a free teaser), while the
+  // more desirable top rows stay blurred behind the paywall. The caller passes a
+  // FIXED index (the collapsed view's last row) so the revealed row does not jump
+  // when the user expands the table via "Show full list". Clamped to the data so
+  // it still works when the user has only a few symbols.
+  const previewIndex = locked && previewRowIndex !== undefined && rows.length > 0 ? Math.min(previewRowIndex, rows.length - 1) : -1;
   const [activeSymbol, setActiveSymbol] = useState<string | null>(null);
   const [popoverPosition, setPopoverPosition] = useState({ x: 320, y: 180 });
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
@@ -60,8 +76,15 @@ export function SymbolTable({ rows, showRank = false, cycles = [] }: { rows: Sym
               const rowCycles = cyclesForSymbol(row.symbol);
               const averageBuyPrice = cycleAveragePrice(rowCycles, 'BUY');
               const averageSellPrice = cycleAveragePrice(rowCycles, 'SELL');
+              const rowLocked = locked && index !== previewIndex;
               return (
-              <tr key={row.symbol} className="hover:bg-white/[0.03]">
+              <tr
+                key={row.symbol}
+                className={`hover:bg-white/[0.03] ${rowLocked ? 'cursor-pointer select-none' : ''}`}
+                style={rowLocked ? { filter: 'blur(6px)' } : undefined}
+                aria-hidden={rowLocked ? 'true' : undefined}
+                onClick={rowLocked ? () => onUnlock?.() : undefined}
+              >
                 {showRank && (
                   <td className={`px-4 py-3 font-semibold ${rankStyle(index).className}`}>
                     <span className="inline-flex items-center gap-2">
@@ -70,17 +93,21 @@ export function SymbolTable({ rows, showRank = false, cycles = [] }: { rows: Sym
                     </span>
                   </td>
                 )}
-                <td className="px-4 py-3 font-medium text-white">{row.symbol}</td>
+                <td className="px-4 py-3 font-medium text-white">
+                  {row.symbol}
+                  {locked && index === previewIndex && <span className="ml-2 rounded-full border border-emerald-300/30 bg-emerald-300/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-200">Preview</span>}
+                </td>
                 <td className="px-4 py-3">{row.orders}</td>
                 <td className="px-4 py-3">{row.executions}</td>
                 <td className="px-4 py-3 text-right">{row.quantity.toLocaleString()}</td>
-                <td className="px-4 py-3 text-right">{averageBuyPrice ? priceMoney(averageBuyPrice) : '-'}</td>
-                <td className="px-4 py-3 text-right">{averageSellPrice ? priceMoney(averageSellPrice) : '-'}</td>
-                <td className="px-4 py-3 text-right">{money(row.totalIn)}</td>
-                <td className="px-4 py-3 text-right">{money(row.totalOut)}</td>
+                <td className="px-4 py-3 text-right">{averageBuyPrice ? safePriceMoney(averageBuyPrice, isPrivacyMode) : '-'}</td>
+                <td className="px-4 py-3 text-right">{averageSellPrice ? safePriceMoney(averageSellPrice, isPrivacyMode) : '-'}</td>
+                <td className="px-4 py-3 text-right">{safeMoney(row.totalIn, isPrivacyMode)}</td>
+                <td className="px-4 py-3 text-right">{safeMoney(row.totalOut, isPrivacyMode)}</td>
                 <td
-                  className="cursor-pointer px-4 py-3 text-cyan-200 underline decoration-cyan-300/40 underline-offset-4"
+                  className={rowLocked ? 'px-4 py-3 text-cyan-200' : 'cursor-pointer px-4 py-3 text-cyan-200 underline decoration-cyan-300/40 underline-offset-4'}
                   onClick={(event) => {
+                    if (rowLocked) { onUnlock?.(); return; }
                     const rect = event.currentTarget.getBoundingClientRect();
                     setActiveSymbol(row.symbol);
                     const centerX = (window.innerWidth - 1152) / 2;
@@ -92,13 +119,34 @@ export function SymbolTable({ rows, showRank = false, cycles = [] }: { rows: Sym
                   {percent(row.winRate)}
                 </td>
                 <td className={`px-4 py-3 font-semibold ${row.result === 'WIN' ? 'text-emerald-300' : row.result === 'LOSS' ? 'text-rose-300' : 'text-slate-300'}`}>{row.result}</td>
-                <td className={`px-4 py-3 text-right font-semibold ${row.realizedPnl >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>{money(row.realizedPnl)}</td>
-                <td className="px-4 py-3 text-right text-slate-400">{money(row.commissions)}</td>
+                <td className={`px-4 py-3 text-right font-semibold ${row.realizedPnl >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>{safeMoney(row.realizedPnl, isPrivacyMode)}</td>
+                <td className="px-4 py-3 text-right text-slate-400">{safeMoney(row.commissions, isPrivacyMode)}</td>
               </tr>
             );})}
           </tbody>
         </table>
       </div>
+      {locked && previewIndex === -1 && (
+        <button
+          type="button"
+          onClick={onUnlock}
+          aria-label="Activate Pro to reveal"
+          className="absolute inset-0 z-20 flex items-center justify-center"
+        >
+          <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-slate-950/70 px-4 py-2 text-sm font-semibold text-amber-100 shadow-lg shadow-black/30 backdrop-blur-sm transition hover:bg-slate-950/85">
+            <Lock size={15} /> Activate Pro to reveal
+          </span>
+        </button>
+      )}
+      {locked && previewIndex !== -1 && rows.length > 1 && (
+        <button
+          type="button"
+          onClick={onUnlock}
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-amber-300/30 bg-amber-300/10 px-4 py-3 text-sm font-semibold text-amber-100 transition hover:bg-amber-300/20"
+        >
+          <Lock size={15} /> Preview shows 1 of {rows.length} · Activate Pro to reveal the rest
+        </button>
+      )}
       {activeSymbol && (
         <div
           className="fixed z-50 max-h-[28rem] w-[72rem] overflow-hidden rounded-2xl border border-cyan-300/20 bg-slate-950/95 shadow-2xl shadow-black/40 backdrop-blur"
@@ -151,10 +199,10 @@ export function SymbolTable({ rows, showRank = false, cycles = [] }: { rows: Sym
                     <td className="px-3 py-2 text-right">{cycle.executions}</td>
                     <td className="px-3 py-2 text-right">{cycle.buyQuantity.toLocaleString()}</td>
                     <td className="px-3 py-2 text-right">{cycle.sellQuantity.toLocaleString()}</td>
-                    <td className="px-3 py-2 text-right">{cycle.averageBuyPrice ? priceMoney(cycle.averageBuyPrice) : '-'}</td>
-                    <td className="px-3 py-2 text-right">{cycle.averageSellPrice ? priceMoney(cycle.averageSellPrice) : '-'}</td>
+                    <td className="px-3 py-2 text-right">{cycle.averageBuyPrice ? safePriceMoney(cycle.averageBuyPrice, isPrivacyMode) : '-'}</td>
+                    <td className="px-3 py-2 text-right">{cycle.averageSellPrice ? safePriceMoney(cycle.averageSellPrice, isPrivacyMode) : '-'}</td>
                     <td className={`px-3 py-2 font-semibold ${cycle.result === 'WIN' ? 'text-emerald-300' : cycle.result === 'LOSS' ? 'text-rose-300' : 'text-slate-300'}`}>{cycle.result}</td>
-                    <td className={`px-3 py-2 text-right font-semibold ${cycle.realizedPnl >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>{money(cycle.realizedPnl)}</td>
+                    <td className={`px-3 py-2 text-right font-semibold ${cycle.realizedPnl >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>{safeMoney(cycle.realizedPnl, isPrivacyMode)}</td>
                     <td className={`px-3 py-2 text-right ${returnPct >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>{returnPct.toFixed(2)}%</td>
                     <td className={`px-3 py-2 text-right ${annualizedReturnPct >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>{holdingDays && holdingDays > 0 ? `${annualizedReturnPct.toFixed(2)}%` : '-'}</td>
                   </tr>

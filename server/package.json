@@ -1,0 +1,14 @@
+{
+  "name": "stock-dashboard-for-ibkr-backend",
+  "private": true,
+  "type": "module",
+  "description": "Runtime dependencies for the embedded Express backend. Kept separate from the root so the packaged app ships ONLY production deps (no vitest/vite/esbuild build tooling).",
+  "dependencies": {
+    "cors": "2.8.6",
+    "dotenv": "17.4.2",
+    "express": "5.2.1",
+    "fast-xml-parser": "5.8.0",
+    "node-machine-id": "^1.1.12",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+  }
+}

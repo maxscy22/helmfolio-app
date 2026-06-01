@@ -1,4 +1,7 @@
 import XLSX from 'xlsx';
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
 
 const yahooChartUrl = (symbol, period1, period2) => {
   const params = new URLSearchParams({
@@ -15,7 +18,74 @@ const startOfYearUnix = () => Math.floor(new Date(new Date().getFullYear(), 0, 1
 const todayUnix = () => Math.floor(Date.now() / 1000);
 const dateToUnix = (dateValue) => Math.floor(new Date(`${dateValue}T00:00:00Z`).getTime() / 1000);
 const marketReferenceCacheTtlMs = 6 * 60 * 60 * 1000;
-let marketReferenceCache = null;
+const DAY_MS = 24 * 60 * 60 * 1000;
+// When chasing a not-yet-published weekly AAII release, don't retry more often
+// than this — prevents the frequent requests that trip AAII's bot-protection.
+const aaiiMinRetryMs = 6 * 60 * 60 * 1000;
+
+// Durable on-disk cache so the last successfully fetched market data (crucially
+// the latest AAII weekly release) survives backend restarts / app relaunches,
+// instead of falling back to the hardcoded seed snapshot on every launch.
+// DASHBOARD_DATA_DIR is injected by the Electron main process (userData); the
+// tmpdir fallback keeps `npm run api` dev usage working.
+const referenceDataDir = process.env.DASHBOARD_DATA_DIR || path.join(os.tmpdir(), 'stock-dashboard-for-ibkr');
+const marketReferenceCacheFile = path.join(referenceDataDir, 'market-reference-cache.json');
+
+const readPersistedReferenceCache = () => {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(marketReferenceCacheFile, 'utf8'));
+    if (parsed && parsed.payload) return parsed;
+  } catch {
+    // No cache yet / unreadable — start fresh.
+  }
+  return null;
+};
+
+const writePersistedReferenceCache = (cache) => {
+  try {
+    fs.mkdirSync(referenceDataDir, { recursive: true });
+    fs.writeFileSync(marketReferenceCacheFile, JSON.stringify(cache), 'utf8');
+  } catch {
+    // Best-effort; an unwritable cache must never break the API response.
+  }
+};
+
+let marketReferenceCache = readPersistedReferenceCache();
+
+const parseWeekEndingDate = (value) => {
+  const match = String(value ?? '').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (!match) return null;
+  const date = new Date(Number(match[3]), Number(match[1]) - 1, Number(match[2]));
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+// Midnight of the most recent Thursday (AAII's weekly publish day), today included.
+const mostRecentThursday = (now = new Date()) => {
+  const date = new Date(now);
+  date.setHours(0, 0, 0, 0);
+  const THURSDAY = 4;
+  const offset = (date.getDay() - THURSDAY + 7) % 7;
+  date.setDate(date.getDate() - offset);
+  return date;
+};
+
+// We already hold the current week's release if the newest stored weekEnding is no
+// more than ~3 days before the most recent Thursday.
+const haveCurrentAaiiRelease = (aaiiData, now = new Date()) => {
+  const newest = parseWeekEndingDate(aaiiData?.weekEnding);
+  if (!newest) return false;
+  return newest.getTime() >= mostRecentThursday(now).getTime() - 3 * DAY_MS;
+};
+
+// AAII publishes once per week (Thursdays). Skip the network request entirely when
+// we already have this week's release; otherwise allow a fetch but throttle retries
+// so a blocked/slow AAII isn't hammered on every app load.
+const shouldFetchAaii = (aaiiData, lastAttemptAt, now = new Date()) => {
+  if (!aaiiData) return true;
+  if (haveCurrentAaiiRelease(aaiiData, now)) return false;
+  const lastAttempt = lastAttemptAt ? new Date(lastAttemptAt).getTime() : 0;
+  return now.getTime() - lastAttempt >= aaiiMinRetryMs;
+};
 
 const toIsoDate = (unixSeconds) => new Date(unixSeconds * 1000).toISOString().slice(0, 10);
 const stripHtml = (value) => String(value ?? '')
@@ -319,11 +389,33 @@ export const fetchMarketReferenceData = async ({ forceRefresh = false } = {}) =>
     };
   }
   const cached = marketReferenceCache?.payload;
-  const [vix, fearGreed, aaii] = await Promise.all([
-    settleReference(fetchVix, cached?.vix ? { data: cached.vix.data, cachedAt: cached.importedAt } : null),
-    settleReference(fetchCnnFearGreed, cached?.fearGreed ? { data: cached.fearGreed.data, cachedAt: cached.importedAt } : null),
-    settleReference(fetchAaiiSentiment, cached?.aaii ? { data: cached.aaii.data, cachedAt: cached.importedAt } : null, aaiiSeedData),
+  const now = new Date();
+
+  // VIX & CNN Fear/Greed are cheap, daily, and not bot-protected — refresh them,
+  // falling back to the last good values on failure.
+  const [vix, fearGreed] = await Promise.all([
+    settleReference(fetchVix, cached?.vix?.data ? { data: cached.vix.data, cachedAt: cached.importedAt } : null),
+    settleReference(fetchCnnFearGreed, cached?.fearGreed?.data ? { data: cached.fearGreed.data, cachedAt: cached.importedAt } : null),
   ]);
+
+  // AAII: weekly cadence (Thursdays) + bot-protection. Only hit the network when we
+  // don't already hold the current week's release; otherwise serve the stored
+  // release as the authoritative latest data — no "fallback snapshot" message for
+  // paying users, and no needless requests that trip the bot-protection.
+  const prevAaii = cached?.aaii?.data ?? null;
+  let aaiiLastAttemptAt = marketReferenceCache?.aaiiLastAttemptAt ?? null;
+  let aaii;
+  if (shouldFetchAaii(prevAaii, aaiiLastAttemptAt, now)) {
+    aaiiLastAttemptAt = now.toISOString();
+    aaii = await settleReference(
+      fetchAaiiSentiment,
+      prevAaii ? { data: prevAaii, cachedAt: cached?.importedAt ?? null } : null,
+      aaiiSeedData,
+    );
+  } else {
+    aaii = { data: prevAaii, error: null, cached: false };
+  }
+
   const payload = {
     importedAt: new Date().toISOString(),
     vix,
@@ -333,8 +425,10 @@ export const fetchMarketReferenceData = async ({ forceRefresh = false } = {}) =>
   };
   marketReferenceCache = {
     cachedAtMs: Date.now(),
+    aaiiLastAttemptAt,
     payload,
   };
+  writePersistedReferenceCache(marketReferenceCache);
   return payload;
 };
 

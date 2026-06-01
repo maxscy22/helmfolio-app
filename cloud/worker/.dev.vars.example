@@ -1,0 +1,8 @@
+# Copy this file to `.dev.vars` (gitignored) for local `wrangler dev`.
+# Production secrets must be set with `wrangler secret put <NAME>` instead.
+
+# base64 PKCS8 DER Ed25519 private key (from `npm run keys`). NEVER commit the real one.
+JWT_PRIVATE_KEY=""
+
+# LemonSqueezy API key (Settings -> API in the LemonSqueezy dashboard).
+LEMONSQUEEZY_API_KEY=""
