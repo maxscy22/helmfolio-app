@@ -1,6 +1,6 @@
 # Helmfolio — Progress notes
 
-_Last updated: 2026-06-01 (~19:53). Website is LIVE at https://helmfolio.com. Resume from here._
+_Last updated: 2026-06-01 (~20:26). Website is LIVE at https://helmfolio.com. **v1.0.5 published.** Resume from here._
 
 ## Session 2 — analytics, security, guides, US-market scope (2026-06-01 evening)
 
@@ -24,8 +24,15 @@ _Last updated: 2026-06-01 (~19:53). Website is LIVE at https://helmfolio.com. Re
 - **Site**: new FAQ entry + amber callout in Download section + note under pricing.
 - **App**: amber note in the IBKR sync panel (`src/App.tsx` ~1579).
 - **Legal**: new Disclaimer clause 4 "Designed for US-market trading" in `legal/DISCLAIMER.md` (+ renumber) and mirrored in `site/legal/disclaimer.html`.
-- **Version bumped to `1.0.5`**; `npm run build` passes. Site redeployed. **App release v1.0.5 still PENDING** (run `npm run electron:publish` with `GH_TOKEN`).
-- Commits this session: `50b5b2d` (analytics), `e7dd6eb` (_headers), `6b66a4a` (guides + US-market site copy), `45e659b` (v1.0.5 app/legal).
+- **Version bumped to `1.0.5`**; `npm run build` passes. Site redeployed.
+- **App release `v1.0.5` PUBLISHED** to GitHub `maxscy22/helmfolio-app` via `npm run electron:publish` (uploaded `Helmfolio-Setup.exe` + `latest.yml`). ACTION: confirm the release is **out of Draft** (electron-builder defaults to draft) so auto-update sees it.
+- **`GH_TOKEN` gotcha (resolved)**: `setx` only affects NEW shells and does NOT update already-running Windsurf terminals — every publish failed until we used same-line `$env:GH_TOKEN="..."; npm run electron:publish` in the active shell. NOTE: the IDE forwards integrated-terminal commands+output to Cascade, so secrets typed there are visible — set tokens in an external terminal. Tokens pasted during this session should be REVOKED.
+
+### Guides nav consistency fixes (site)
+- Guides pages had a shorter nav: added **Privacy** link and reordered to match homepage exactly — **Features / Privacy / Pricing / Guides / FAQ** across `guides/index.html`, `flex-token.html`, `csv-email.html`.
+
+### Session 2 commits
+- `50b5b2d` analytics · `e7dd6eb` _headers · `6b66a4a` guides + US-market site copy · `45e659b` v1.0.5 app/legal · `b2a4462` PROGRESS · `3505a5d` guides Privacy link · `563ce43` guides nav order.
 
 ## What was done this session
 
@@ -77,7 +84,7 @@ _Last updated: 2026-06-01 (~19:53). Website is LIVE at https://helmfolio.com. Re
 3. **Auto-update first release**: set `GH_TOKEN`, bump `package.json` version per release,
    `npm run electron:publish`, ensure release is **public + published**. Test update flow
    (install v1.0.0 → publish v1.0.1 → app should auto-download + prompt restart).
-3b. **Publish app `v1.0.5`**: `$env:GH_TOKEN="..."; npm run electron:publish` → confirm public+published GitHub release; verify v1.0.4 auto-updates to v1.0.5.
+3b. ✅ **Published app `v1.0.5`** (electron:publish, uploaded exe + latest.yml). ⏳ REMAINING: confirm the GitHub release is **published, not Draft**, then verify v1.0.4 auto-updates to v1.0.5 (or Settings → Check for updates).
 4. **App's two disabled "IBKR setup guide — coming soon" buttons**: wire to `https://helmfolio.com/guides/flex-token.html` and `/guides/csv-email.html` (guides now LIVE). Needs an app release.
 5. **Guide screenshots**: capture IBKR Flex Query "General Configuration" + Statements-CSV screens → drop in `site/assets/guides/`, replace the dashed placeholders in the two guide pages.
 6. Optional: dedicated 1200×630 OG banner. ✅ Cloudflare Web Analytics now live.
