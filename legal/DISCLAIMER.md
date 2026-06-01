@@ -28,13 +28,12 @@ market reference data may be delayed, incomplete, or inaccurate. Always verify
 figures against your broker's official statements before relying on them.
 
 4. DESIGNED FOR US-MARKET TRADING
-The Software is built and optimised for trading in US markets — US stocks and
-ETFs denominated in US dollars. While it can import or sync any IBKR account,
-performance figures are most accurate for USD-denominated activity. Trade-level
-profit and loss for non-US, non-USD instruments (for example European, Japanese,
-or Korean shares in their local currencies) is not currency-converted and may be
-inaccurate or misleading. Do not rely on the Software for analysis of non-US-market
-or multi-currency trading.
+The Software is fully optimized for US stocks, ETFs, and USD-denominated assets.
+While it can import or sync any IBKR account, multi-currency reporting and local
+tracking rules for non-US markets (for example European, Japanese, or Korean
+exchanges) are currently not supported, which affects profit/loss (PnL) accuracy
+for those assets. Do not rely on the Software for analysis of non-US-market or
+multi-currency trading.
 
 5. YOUR DECISIONS ARE YOUR OWN
 Investing and trading involve substantial risk, including the possible loss of
