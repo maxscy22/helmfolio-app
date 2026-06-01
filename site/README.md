@@ -61,6 +61,24 @@ python -m http.server 8080 --directory site
 
 (Alternatively, drag-and-drop the `site/` folder into Pages' direct-upload option.)
 
+## Analytics & conversion tracking
+
+The site ships a privacy-first funnel (no cookie banner needed):
+
+1. **Pageviews / traffic** — Cloudflare Web Analytics. Beacon tag is at the bottom of
+   `index.html` with the live token for `helmfolio.com` (`data-cf-beacon`). Stats show up in
+   Cloudflare dashboard → **Web Analytics** a few minutes after the site is deployed.
+2. **Buy / Download clicks** — the buttons (`data-buy-link`, `data-download-link`) call
+   `zaraz.track('buy_click' | 'download_click', …)`. This is a **no-op until you enable
+   Cloudflare Zaraz** (free) in the dashboard; once enabled, events flow with no code change.
+3. **Checkout visits / sales** — read from the **LemonSqueezy** dashboard. The Buy link carries
+   `utm_source=helmfolio.com&utm_medium=website&utm_campaign=pricing_pro` so LS attributes the
+   source; LS counts of checkout visits ≈ "Buy clicks".
+4. **Installer downloads** — GitHub release download counter on `maxscy22/helmfolio-app`.
+
+Funnel = CF visitors → (Zaraz `buy_click` / LS checkout visits) → LS sales; and CF visitors →
+(Zaraz `download_click` / GitHub download count).
+
 ## Notes
 
 - Tailwind runs via the Play CDN for zero-build simplicity. For production polish, compile a

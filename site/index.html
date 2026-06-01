@@ -116,7 +116,7 @@
             <span class="font-semibold text-white">never leave your computer.</span>
           </p>
           <div class="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <a href="#download"
+            <a href="#download" data-download-cta="hero"
                class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-cyan-400 px-6 py-3.5 text-base font-bold text-slate-950 shadow-xl shadow-cyan-400/25 transition hover:bg-cyan-300 sm:w-auto">
               <svg viewBox="0 0 24 24" class="h-5 w-5" fill="currentColor"><path d="M12 3v10.586l3.293-3.293 1.414 1.414L12 17.414l-4.707-4.707 1.414-1.414L12 13.586V3h0zM5 19h14v2H5z"/></svg>
               Download for Windows
@@ -446,7 +446,7 @@
               <li class="flex gap-3 text-slate-500"><span>—</span> Risk metrics &amp; benchmarks</li>
               <li class="flex gap-3 text-slate-500"><span>—</span> Advanced KPIs &amp; PDF reports</li>
             </ul>
-            <a href="#download" class="mt-8 inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/5 px-6 py-3.5 text-base font-semibold text-white transition hover:bg-white/10">
+            <a href="#download" data-download-cta="pricing_free" class="mt-8 inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/5 px-6 py-3.5 text-base font-semibold text-white transition hover:bg-white/10">
               Download free
             </a>
           </div>
@@ -477,7 +477,7 @@
             <!-- LemonSqueezy checkout (helmfolio store). The Y4MTQWOQ founders' code
                  (-$30, first 100 redemptions) is pre-applied so the page opens already
                  showing $99 instead of the $129 list price. -->
-            <a href="https://helmfolio.lemonsqueezy.com/checkout/buy/1a405411-9af2-40f9-88e4-86a431cbed3e?checkout[discount_code]=Y4MTQWOQ" data-buy-link
+            <a href="https://helmfolio.lemonsqueezy.com/checkout/buy/1a405411-9af2-40f9-88e4-86a431cbed3e?checkout[discount_code]=Y4MTQWOQ&utm_source=helmfolio.com&utm_medium=website&utm_campaign=pricing_pro" data-buy-link
                class="mt-6 inline-flex items-center justify-center rounded-2xl bg-cyan-400 px-6 py-3.5 text-base font-bold text-slate-950 shadow-xl shadow-cyan-400/25 transition hover:bg-cyan-300">
               Get Pro — $99/year
             </a>
@@ -622,6 +622,38 @@
     // Footer year
     document.getElementById('year').textContent = new Date().getFullYear();
 
+    // ----------------------------------------------------------------
+    // Conversion tracking (funnel: visit -> buy/download click -> sale).
+    // Cloudflare Web Analytics (beacon at the bottom of <body>) records
+    // pageviews/traffic but has NO custom-event API. So button clicks are
+    // recorded via Cloudflare Zaraz's zaraz.track(): it fires only once you
+    // enable Zaraz (free) in the Cloudflare dashboard and is a safe no-op
+    // until then. The Buy link also carries utm_* params so LemonSqueezy
+    // attributes the visit (its dashboard counts checkout visits = buy clicks).
+    // ----------------------------------------------------------------
+    (function () {
+      function track(name, props) {
+        try {
+          if (window.zaraz && typeof window.zaraz.track === 'function') {
+            window.zaraz.track(name, props || {});
+          }
+        } catch (e) { /* never block navigation on a tracking error */ }
+      }
+      document.querySelectorAll('[data-buy-link]').forEach(function (a) {
+        a.addEventListener('click', function () { track('buy_click', { plan: 'pro_annual' }); });
+      });
+      document.querySelectorAll('[data-download-link]').forEach(function (a) {
+        a.addEventListener('click', function () { track('download_click', { os: 'windows' }); });
+      });
+      // In-page CTAs that jump to the #download section (intent, not the
+      // actual installer click). location = hero | pricing_free.
+      document.querySelectorAll('[data-download-cta]').forEach(function (a) {
+        a.addEventListener('click', function () {
+          track('download_intent', { location: a.getAttribute('data-download-cta') });
+        });
+      });
+    })();
+
     // Anchor fix: lazy-loaded screenshots above the fold can grow AFTER the
     // browser's initial #hash jump, pushing sections down so a deep link like
     // /#pricing lands on the wrong section. Re-scroll to the target once the
@@ -670,5 +702,14 @@
       });
     })();
   </script>
+
+  <!-- ============================================================ -->
+  <!-- Cloudflare Web Analytics — privacy-first pageview/traffic stats. -->
+  <!-- No cookies, no cross-site tracking, so no cookie banner needed.  -->
+  <!-- Token for helmfolio.com is set below (Cloudflare dashboard ->     -->
+  <!-- Web Analytics). Stats appear there a few minutes after deploy.    -->
+  <!-- ============================================================ -->
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon='{"token": "24f4cdbfbf5f4abb808dc0095a413750"}'></script>
 </body>
 </html>
