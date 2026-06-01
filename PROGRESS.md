@@ -1,6 +1,31 @@
 # Helmfolio — Progress notes
 
-_Last updated: 2026-06-01 (evening). Website is LIVE at https://helmfolio.com. Resume from here._
+_Last updated: 2026-06-01 (~19:53). Website is LIVE at https://helmfolio.com. Resume from here._
+
+## Session 2 — analytics, security, guides, US-market scope (2026-06-01 evening)
+
+### Analytics & conversion tracking (site)
+- **Cloudflare Web Analytics** beacon in `site/index.html` with LIVE token `24f4cdbfbf5f4abb808dc0095a413750` (pageviews/traffic; no cookie banner needed).
+- **Click events** via `zaraz.track()` (no-op until Zaraz enabled in CF dashboard): `buy_click`, `download_click`, and `download_intent` (`location: hero | pricing_free`) on the in-page #download CTAs.
+- **UTM** on the buy link (`utm_source=helmfolio.com&utm_medium=website&utm_campaign=pricing_pro`) so LemonSqueezy attributes the source. Funnel doc in `site/README.md`.
+
+### Security headers (site)
+- New `site/_headers` (Cloudflare Pages): HSTS, X-Content-Type-Options, X-Frame-Options: DENY, Referrer-Policy, Permissions-Policy.
+- **No CSP yet — on purpose** (Tailwind Play CDN + inline scripts would force `'unsafe-inline'`/`'unsafe-eval'`). Add a strict hash/nonce CSP only after compiling Tailwind to static CSS.
+- CF dashboard: **Always Use HTTPS = ON**; dashboard HSTS left OFF (handled by `_headers`).
+
+### IBKR setup guides (new `site/guides/`)
+- `guides/index.html` hub + `guides/flex-token.html` (Flex Token & Query ID) + `guides/csv-email.html` (manual CSV export + daily-email delivery). Linked from main nav + footer.
+- Flex guide is **code-accurate**: full **General Configuration table** (Date `yyyyMMdd`, Time `HHmmss`, Separator `;` flagged "must match" — app `splitTradeDateTime` in `src/App.tsx` splits on `;` and expects 8-digit date / 6-digit time), "Select All" per section, and a note that the standalone **Include Currency Rates?** toggle is optional because the app uses the per-row `FXRateToBase` field (`src/lib/cashFlow.ts`).
+- Screenshot placeholders (dashed boxes) await real IBKR screenshots in `site/assets/guides/`.
+
+### US-market scope disclosure (site + app + legal) — v1.0.5
+- App only currency-converts **cash** (dividends/interest/deposits via `FXRateToBase`); **trade-level P/L for non-USD markets is NOT converted**. Decided to disclose clearly rather than chase worldwide-market data (solo dev).
+- **Site**: new FAQ entry + amber callout in Download section + note under pricing.
+- **App**: amber note in the IBKR sync panel (`src/App.tsx` ~1579).
+- **Legal**: new Disclaimer clause 4 "Designed for US-market trading" in `legal/DISCLAIMER.md` (+ renumber) and mirrored in `site/legal/disclaimer.html`.
+- **Version bumped to `1.0.5`**; `npm run build` passes. Site redeployed. **App release v1.0.5 still PENDING** (run `npm run electron:publish` with `GH_TOKEN`).
+- Commits this session: `50b5b2d` (analytics), `e7dd6eb` (_headers), `6b66a4a` (guides + US-market site copy), `45e659b` (v1.0.5 app/legal).
 
 ## What was done this session
 
@@ -46,18 +71,21 @@ _Last updated: 2026-06-01 (evening). Website is LIVE at https://helmfolio.com. R
 1. **Website links** in `site/index.html` (search `TODO`):
    - ✅ `data-download-link` → `https://github.com/maxscy22/helmfolio-app/releases/latest/download/Helmfolio-Setup.exe` (done 2026-06-01).
    - ✅ `data-buy-link` → real Helmfolio LemonSqueezy checkout with `Y4MTQWOQ` pre-applied (done 2026-06-01).
-   - ⏳ **Redeploy site** to push the anchor-jump fix live: `npx wrangler pages deploy site --project-name helmfolio`.
+   - ✅ **Redeploy site** done (anchor-jump fix + analytics + headers + guides + US-market copy all live).
 1b. **LemonSqueezy: leave test mode → LIVE** (the real blocker for taking money). Then run one real purchase to confirm $129 list + `Y4MTQWOQ` shows $99. Optional: "Connect domain" (e.g. `checkout.helmfolio.com`) for branding — if done, update buy link in `site/index.html` + `.env` and redeploy.
 2. ✅ **`electron-builder.yml`**: `publish` set to `github` owner `maxscy22` / repo `helmfolio-app` (public). (done 2026-06-01)
 3. **Auto-update first release**: set `GH_TOKEN`, bump `package.json` version per release,
    `npm run electron:publish`, ensure release is **public + published**. Test update flow
    (install v1.0.0 → publish v1.0.1 → app should auto-download + prompt restart).
-4. **App's two disabled "IBKR setup guide — coming soon" buttons**: wire to the published
-   guide URL once the site is live.
-5. Optional: capture a dedicated 1200×630 OG banner; consider Cloudflare Web Analytics.
+3b. **Publish app `v1.0.5`**: `$env:GH_TOKEN="..."; npm run electron:publish` → confirm public+published GitHub release; verify v1.0.4 auto-updates to v1.0.5.
+4. **App's two disabled "IBKR setup guide — coming soon" buttons**: wire to `https://helmfolio.com/guides/flex-token.html` and `/guides/csv-email.html` (guides now LIVE). Needs an app release.
+5. **Guide screenshots**: capture IBKR Flex Query "General Configuration" + Statements-CSV screens → drop in `site/assets/guides/`, replace the dashed placeholders in the two guide pages.
+6. Optional: dedicated 1200×630 OG banner. ✅ Cloudflare Web Analytics now live.
+7. Optional (future): compile Tailwind to static CSS, then add a strict CSP in `site/_headers`.
 
 ## Notes
-- Local website preview server may still be running on `http://localhost:4321` (`npx serve site`).
-- Nothing was committed to git this session (many staged-but-uncommitted changes exist).
+- Local website preview server may still be running on `http://localhost:5055` (`npx serve site -l 5055`).
+- All Session 2 work is committed (see commit hashes above) and the site is deployed. Only the app `v1.0.5` release is outstanding.
+- App FX limitation lives in `src/lib/cashFlow.ts` (cash only). Trade-level multi-currency conversion is NOT implemented — intentionally out of scope for now.
 - Original full-res screenshots remain in `build/` (e.g. `2026-06-01 04xxxx.jpg`).
 - Plan file: `~/.windsurf/plans/helmfolio-website-016d37.md`.
