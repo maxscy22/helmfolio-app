@@ -1,10 +1,9 @@
 import { KeyRound, ShieldCheck, ShieldAlert, ExternalLink, Check, Lock, Mail } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { APP_NAME, APP_SUPPORT_EMAIL } from '../appMetadata';
+import { APP_NAME, APP_SUPPORT_EMAIL, APP_WEBSITE } from '../appMetadata';
 import { licenseSummary } from '../lib/featureGate';
 import type { LicenseState } from '../lib/license';
-import { LICENSE_PURCHASE_URL } from '../lib/licenseConfig';
 
 type LicenseModalProps = {
   open: boolean;
@@ -139,17 +138,17 @@ export function LicenseModal({ open, state, onActivate, onDeactivate, onClose }:
               </div>
 
               <div className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 px-4 py-3 text-center">
-                <p className="text-2xl font-black text-white">$99<span className="text-base font-semibold text-slate-300">/year</span></p>
-                <p className="mt-1 text-xs leading-5 text-cyan-100/80">About $8/month — pays for itself with one better decision.<br />2 devices · works offline · 100% local &amp; private.</p>
+                <p className="text-sm font-semibold text-white">Unlock the full performance desk</p>
+                <p className="mt-1 text-xs leading-5 text-cyan-100/80">Pays for itself with one better decision.<br />2 devices · works offline · 100% local &amp; private.</p>
               </div>
 
               <a
                 className="flex w-full items-center justify-center gap-2 rounded-2xl bg-cyan-300 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-200"
-                href={LICENSE_PURCHASE_URL}
+                href={`${APP_WEBSITE}/#pricing`}
                 target="_blank"
                 rel="noreferrer"
               >
-                Get Pro — $99/yr <ExternalLink size={15} />
+                See plans &amp; upgrade <ExternalLink size={15} />
               </a>
 
               {showActivate ? (

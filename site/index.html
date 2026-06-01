@@ -396,9 +396,13 @@
 
           <!-- Pro -->
           <div class="card-glow relative flex flex-col rounded-2xl border border-cyan-300/30 bg-panel p-8">
-            <span class="absolute -top-3 right-8 rounded-full bg-cyan-400 px-3 py-1 text-xs font-bold text-slate-950">Most popular</span>
+            <span class="absolute -top-3 right-8 rounded-full bg-cyan-400 px-3 py-1 text-xs font-bold text-slate-950">Save $30</span>
             <h3 class="text-lg font-bold text-white">Pro</h3>
-            <p class="mt-3 text-4xl font-extrabold text-white">$99<span class="text-lg font-semibold text-slate-400">/year</span></p>
+            <div class="mt-3 flex items-end gap-3">
+              <p class="text-4xl font-extrabold text-white">$99<span class="text-lg font-semibold text-slate-400">/year</span></p>
+              <p class="pb-1.5 text-lg font-semibold text-slate-500 line-through">$129</p>
+            </div>
+            <p class="mt-1.5 text-sm font-medium text-cyan-200/90">$30 off the standard $129/year.</p>
             <p class="mt-1 text-sm text-slate-400">Use on 2 of your personal devices.</p>
             <ul class="mt-7 space-y-3 text-sm text-slate-300">
               <li class="flex gap-3"><span class="text-cyan-300">✓</span> Everything in Free</li>
@@ -407,11 +411,17 @@
               <li class="flex gap-3"><span class="text-cyan-300">✓</span> Benchmark vs. NASDAQ &amp; S&amp;P 500</li>
               <li class="flex gap-3"><span class="text-cyan-300">✓</span> Advanced KPIs &amp; themed PDF reports</li>
             </ul>
-            <!-- TODO(links): replace href with the real LemonSqueezy checkout URL. -->
+            <!-- TODO(links): replace href with the real LemonSqueezy checkout URL.
+                 Anchor pricing: set the product's LIST price to $129/year in LemonSqueezy
+                 and apply a "Forever" discount code that brings it to $99, so the $129
+                 reference price is genuine (not a fake strike-through). Append the code
+                 to the checkout URL, e.g.
+                 https://YOUR-STORE.lemonsqueezy.com/buy/PRODUCT?checkout[discount_code]=LAUNCH -->
             <a href="https://your-store.lemonsqueezy.com" data-buy-link
                class="mt-8 inline-flex items-center justify-center rounded-2xl bg-cyan-400 px-6 py-3.5 text-base font-bold text-slate-950 shadow-xl shadow-cyan-400/25 transition hover:bg-cyan-300">
               Get Pro — $99/year
             </a>
+            <p class="mt-3 text-center text-xs text-slate-500">Billed annually. Cancel anytime.</p>
           </div>
         </div>
         <p class="mt-8 text-center text-sm text-slate-400">License lapses? You never lose your data — the app simply returns to the free tier.</p>
@@ -469,6 +479,14 @@
 
         <details class="group rounded-2xl border border-white/10 bg-panel p-5 open:border-cyan-300/30">
           <summary class="flex cursor-pointer list-none items-center justify-between font-semibold text-white">
+            How do I back up my data or move to a new computer?
+            <svg class="faq-chevron h-5 w-5 text-slate-400 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </summary>
+          <p class="mt-3 text-sm leading-relaxed text-slate-400">Yes. In <span class="font-medium text-slate-200">Settings</span> you can <span class="font-medium text-slate-200">export your entire dataset to a single JSON file</span> — every trade, position, NAV snapshot and cash transaction — and import it back on any machine to pick up exactly where you left off. You can also open your local data folder straight from Settings to copy or archive it yourself. Because everything lives on your computer, your records are yours to back up and carry anywhere.</p>
+        </details>
+
+        <details class="group rounded-2xl border border-white/10 bg-panel p-5 open:border-cyan-300/30">
+          <summary class="flex cursor-pointer list-none items-center justify-between font-semibold text-white">
             Who is behind Helmfolio?
             <svg class="faq-chevron h-5 w-5 text-slate-400 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
           </summary>
@@ -493,7 +511,8 @@
             Download for Windows
           </a>
         </div>
-        <p class="mt-4 text-sm text-slate-400">Windows 10/11 (64-bit). macOS &amp; Linux coming soon.</p>
+        <p class="mt-4 text-sm text-slate-400">Windows 10/11 (64-bit).</p>
+        <p class="mt-2 text-sm text-slate-400">On a Mac? <a href="mailto:support@helmfolio.com?subject=Mac%20version%20interest&amp;body=I'd%20use%20Helmfolio%20on%20macOS." class="font-medium text-cyan-300 transition hover:text-cyan-200">Email us</a> &mdash; enough interest and we'll seriously look at a macOS version.</p>
       </div>
     </section>
 

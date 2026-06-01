@@ -29,6 +29,10 @@ Only two reasons, and neither involves your sensitive data:
 
 Yes. Your data and all analytics work completely offline. A Pro license re-verifies online **periodically (about once a day)**; in between, the app keeps working without an internet connection.
 
+### Can I back up my data or move it to another computer?
+
+Yes. Because all your data lives on your own machine, you stay in full control of it. In **Settings** you can **export your full dataset to a single JSON file** — every trade, position, NAV snapshot and cash transaction — and **import** it on any other computer to pick up exactly where you left off. You can also open the local data folder from Settings to copy or archive it yourself. Nothing is locked to the cloud.
+
 ---
 
 ## 📈 Getting Started & Brokers
