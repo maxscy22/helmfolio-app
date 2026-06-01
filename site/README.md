@@ -26,8 +26,8 @@ Search `index.html` for `TODO`:
    `https://github.com/<owner>/<repo>/releases/latest/download/Helmfolio-Setup.exe`.
    Publish releases with `npm run electron:publish` (needs a `GH_TOKEN`); the release must be
    **public** for in-app auto-update to work without embedding a token.
-2. **Buy link** (`data-buy-link`) — replace `https://your-store.lemonsqueezy.com` with the real
-   LemonSqueezy checkout URL.
+2. ~~**Buy link** (`data-buy-link`)~~ — **done.** Points to the Helmfolio LemonSqueezy checkout
+   with the founders' discount code (`Y4MTQWOQ`) pre-applied.
 3. ~~Dashboard screenshot~~ — **done.** `assets/screenshot-*.jpg` are real Demo-mode captures
    (hero + KPIs + benchmark + equity curve). To refresh: run `npm run dev`, open in a **browser**
    (treated as Pro + Demo button available), click **Demo**, screenshot. Identity is masked to
