@@ -1,0 +1,17 @@
+# Cloudflare Pages response headers for helmfolio.com
+# Docs: https://developers.cloudflare.com/pages/configuration/headers/
+#
+# NOTE: no Content-Security-Policy yet. The landing page still uses the
+# Tailwind Play CDN (runtime JS that injects styles) plus several inline
+# <script> blocks, so any compatible CSP would need 'unsafe-inline' (and
+# likely 'unsafe-eval') — giving little real protection. Add a strict,
+# hash/nonce-based CSP only AFTER compiling Tailwind to a static styles.css
+# and removing the inline scripts. The headers below are CSP-independent
+# and cannot break the current site.
+
+/*
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=()

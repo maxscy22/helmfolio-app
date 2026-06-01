@@ -79,6 +79,18 @@ The site ships a privacy-first funnel (no cookie banner needed):
 Funnel = CF visitors → (Zaraz `buy_click` / LS checkout visits) → LS sales; and CF visitors →
 (Zaraz `download_click` / GitHub download count).
 
+## Security headers
+
+`site/_headers` sets CSP-independent hardening on every response (HSTS,
+`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`,
+`Permissions-Policy`). These cannot break the current Tailwind Play CDN build.
+
+**No `Content-Security-Policy` yet** — on purpose. The Tailwind Play CDN injects
+styles at runtime and the page has inline `<script>` blocks, so any compatible CSP
+would need `'unsafe-inline'` (and likely `'unsafe-eval'`), giving little real
+protection. Add a strict hash/nonce CSP only **after** compiling Tailwind to a
+static `styles.css` and removing the inline scripts.
+
 ## Notes
 
 - Tailwind runs via the Play CDN for zero-build simplicity. For production polish, compile a
