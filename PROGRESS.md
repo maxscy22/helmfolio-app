@@ -1,6 +1,28 @@
 # Helmfolio — Progress notes
 
-_Last updated: 2026-06-01 (~23:06). Website is LIVE at https://helmfolio.com (redeployed twice tonight — latest https://2d7fbb23.helmfolio.pages.dev). **v1.0.5 is the published app; `package.json` now bumped to `1.0.7` locally but NOT yet published.** Resume from here._
+_Last updated: 2026-06-02 (~22:50). Website is LIVE at https://helmfolio.com (latest deploy https://cf46c8d1.helmfolio.pages.dev). Guides reworked + redeployed tonight (committed `e762c9e`). App: tag `v1.0.9` is the latest published. Resume from here._
+
+## Session — IBKR guides overhaul (2026-06-02 evening)
+
+Committed in `e762c9e` (`site/guides/flex-token.html`, `site/guides/csv-email.html`, + two screenshots `site/assets/flex-query-config.png`, `site/assets/csv_report.png`). Deployed via `npx wrangler pages deploy site --project-name helmfolio --commit-dirty=true` (last URL `https://cf46c8d1.helmfolio.pages.dev`). Live site == git == in sync.
+
+### `flex-token.html` (Flex Token / one-click sync guide)
+- Proofreading fix (Step 4: "included **in the Cash Transactions section**").
+- Moved the rose "Get these three exactly right **before you save**" date/time warning to sit directly under the Step 5 General-Configuration table (just before Step 6/Save).
+- Replaced screenshot placeholder with real `<img src="/assets/flex-query-config.png">` (XML form). Photo now sits **directly under the Step 5 title**.
+- Added amber **IBKR rate-limit note** under Step 12 (Flex API ~once per few min; wait ~15 min if empty/failed sync).
+
+### `csv-email.html` — FULLY REWRITTEN (old "Statements page CSV download" flow was wrong)
+- New structure = **Flex-Query-email** flow: Part A create query (steps 1-6) · Part B daily email delivery (7-11) · Pro-Tip instant manual Run/Download box · Part C import (12-13). Hero intro + 3-part subnav updated.
+- Emoji callouts from source rendered as the site's colored callout boxes (cyan tip / amber warn / rose critical) — no literal emoji, for consistency.
+- Step 5 photo = `/assets/csv_report.png` (the CSV form), placed under the Step 5 title. Added a **CSV Delivery settings table**: Include header & trailer records? No · Include column headers? **Yes** (flagged *must be Yes* — needed for parsing) · Display single column header row? No · Include section code & line descriptor? No · Period Last 365 Calendar Days. General-Configuration table (date/time/separator + toggles) kept below it.
+- Step 9: removed the "Secure Login (Two-Factor)…" bullet; added reminder beside Encryption: No — "if Encryption is not set for Email delivery, the account details will be masked within the report."
+- Kept the 365-day "don't leave gaps" + Upgrade-to-Pro note at end of Part C.
+
+### Notes / gotchas
+- Site deploys to **Cloudflare Pages**, project `helmfolio`, output dir `site/`. Deploy is independent of git (uploads working files), so always commit too.
+- PowerShell: `&&` is NOT a valid separator — use `;` to chain commands.
+- Screenshots live in `site/assets/` (referenced as `/assets/...`).
 
 ### NEXT ACTION when resuming (app release v1.0.7)
 - `package.json` is already at `1.0.7` (user bumped). **Pending in-app changes awaiting this release**: US-market in-app copy (`c65ff1f`), license lapse/expiry banner (`9112391`), sync-status accumulation fix (`dc57015`), and the new "Static, non-real-time data" disclaimer clause (`e8abc05`, reaches app via `?raw` import of `legal/DISCLAIMER.md`).
