@@ -465,13 +465,21 @@ export default function App() {
   const hasActualNavCurve = useMemo(() => navCurve.length >= 2, [navCurve]);
 
   const allBenchmarkStartDate = (hasActualNavCurve ? navCurve[0]?.date : stats.portfolioCurve[0]?.date) ?? '';
-  // Master "portfolio start date": the user's manual override, or auto = earliest
-  // imported data date. Anchors returns, risk metrics, the equity/database window,
-  // and the benchmark window unless a custom benchmark range overrides it.
-  const effectivePortfolioStartDate = portfolioStartDate || allBenchmarkStartDate;
   const navCurveLastDate = navCurve[navCurve.length - 1]?.date ?? '';
   const portfolioCurveLastDate = stats.portfolioCurve[stats.portfolioCurve.length - 1]?.date ?? '';
   const allBenchmarkEndDate = [navCurveLastDate, portfolioCurveLastDate].filter(Boolean).sort().pop() ?? '';
+  // Master "portfolio start date": the user's manual override, or auto = earliest
+  // imported data date. Anchors returns, risk metrics, the equity/database window,
+  // and the benchmark window unless a custom benchmark range overrides it.
+  // Clamp to the imported data range so a future / out-of-range date (e.g. a stale
+  // saved value) can never resolve to the latest NAV and be mistaken for funding.
+  const clampDateToDataRange = (date: string) => {
+    if (!date) return '';
+    if (allBenchmarkEndDate && date > allBenchmarkEndDate) return allBenchmarkEndDate;
+    if (allBenchmarkStartDate && date < allBenchmarkStartDate) return allBenchmarkStartDate;
+    return date;
+  };
+  const effectivePortfolioStartDate = clampDateToDataRange(portfolioStartDate) || allBenchmarkStartDate;
   const effectiveBenchmarkStartDate = benchmarkRangeMode === 'custom'
     ? (benchmarkFromDate || effectivePortfolioStartDate)
     : benchmarkRangeMode === 'portfolio'
@@ -1022,7 +1030,15 @@ export default function App() {
   const selectedNavCurve = useMemo(() => navCurve.filter((point) => (!effectiveBenchmarkStartDate || point.date >= effectiveBenchmarkStartDate) && (!effectiveBenchmarkEndDate || point.date <= effectiveBenchmarkEndDate)), [navCurve, effectiveBenchmarkStartDate, effectiveBenchmarkEndDate]);
   const basePortfolioPnl = useMemo(() => [...stats.portfolioCurve].reverse().find((point) => effectiveBenchmarkStartDate && point.date < effectiveBenchmarkStartDate)?.portfolio ?? 0, [stats.portfolioCurve, effectiveBenchmarkStartDate]);
   const benchmarkDates = useMemo(() => hasActualNavCurve ? selectedNavCurve.map((point) => point.date) : selectedPortfolioCurve.map((point) => point.date), [hasActualNavCurve, selectedNavCurve, selectedPortfolioCurve]);
-  const navBenchmarkBase = useMemo(() => effectiveBenchmarkStartDate ? navValueForDate(sourceNavRows, effectiveBenchmarkStartDate) : navCurve[0]?.value ?? null, [effectiveBenchmarkStartDate, sourceNavRows, navCurve]);
+  // The denominator (starting base) for the Period Benchmark portfolio return.
+  // It now honors the user's chosen funding basis: Manual override, the start
+  // date's Opening NAV (prior-day close, before that day's deposits), or its
+  // Closing NAV (after that day's deposits). Falls back to the start date's
+  // closing NAV if no basis value is resolvable.
+  const navBenchmarkBase = useMemo(() => {
+    if (benchmarkStartingNav && benchmarkStartingNav > 0) return Number(benchmarkStartingNav.toFixed(2));
+    return effectiveBenchmarkStartDate ? navValueForDate(sourceNavRows, effectiveBenchmarkStartDate) : navCurve[0]?.value ?? null;
+  }, [benchmarkStartingNav, effectiveBenchmarkStartDate, sourceNavRows, navCurve]);
   // Cash-flow adjustment source for RETURN/RISK metrics: BOTH deposits and
   // withdrawals, so a mid-period deposit is neutralized (not mistaken for a gain)
   // just like a withdrawal. Initial funding / pre-baseline flows are excluded
@@ -1030,10 +1046,16 @@ export default function App() {
   const cashTransactionNetFlowRows = useMemo(() => cashTransactionNetFlowRowsFromRows(sourceCashRows), [sourceCashRows]);
   const navCashFlowRows = useMemo(() => cashTransactionNetFlowRows.length ? cashTransactionNetFlowRows : navCashFlowRowsFromRows(sourceNavRows), [cashTransactionNetFlowRows, sourceNavRows]);
   const curveCashFlowByDate = useMemo(() => cashFlowByCurveDate(navCashFlowRows, navCurve.map((point) => point.date)), [navCashFlowRows, navCurve]);
+  // INVARIANT: the start-date deposit must be counted exactly once. With the
+  // Opening basis the base NAV is the prior-day close (BEFORE that day's
+  // deposit), so the start-date deposit must be treated as an in-period cash
+  // flow (>= start). With Closing / Manual-override the deposit is already baked
+  // into the base, so it is excluded from in-period flows (> start).
+  const includeStartDateCashFlow = !useManualStartingNav && startingNavBasis === 'open';
   const benchmarkCashFlowByDate = useMemo(() => cashFlowByCurveDate(
-    navCashFlowRows.filter((row) => (!effectiveBenchmarkStartDate || row.date > effectiveBenchmarkStartDate) && (!effectiveBenchmarkEndDate || row.date <= effectiveBenchmarkEndDate)),
+    navCashFlowRows.filter((row) => (!effectiveBenchmarkStartDate || (includeStartDateCashFlow ? row.date >= effectiveBenchmarkStartDate : row.date > effectiveBenchmarkStartDate)) && (!effectiveBenchmarkEndDate || row.date <= effectiveBenchmarkEndDate)),
     selectedNavCurve.map((point) => point.date),
-  ), [navCashFlowRows, effectiveBenchmarkStartDate, effectiveBenchmarkEndDate, selectedNavCurve]);
+  ), [navCashFlowRows, effectiveBenchmarkStartDate, effectiveBenchmarkEndDate, selectedNavCurve, includeStartDateCashFlow]);
   const nasdaqByDate = useMemo(() => benchmarkReturnsFromStart(benchmarkDates, benchmarks.nasdaq, effectiveBenchmarkStartDate), [benchmarkDates, benchmarks.nasdaq, effectiveBenchmarkStartDate]);
   const sp500ByDate = useMemo(() => benchmarkReturnsFromStart(benchmarkDates, benchmarks.sp500, effectiveBenchmarkStartDate), [benchmarkDates, benchmarks.sp500, effectiveBenchmarkStartDate]);
   const ytdBenchmarkData = useMemo(() => {
@@ -1693,9 +1715,9 @@ export default function App() {
                   </label>
                   <label className="block">
                     <span className="text-slate-500">Portfolio start date</span>
-                    <input className="mt-1 w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-white outline-none focus:border-cyan-300 disabled:opacity-60" type="date" value={isDemoMode ? '' : portfolioStartDate} disabled={isDemoMode} onChange={(event: ChangeEvent<HTMLInputElement>) => setPortfolioStartDate(event.target.value)} />
+                    <input className="mt-1 w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-white outline-none focus:border-cyan-300 disabled:opacity-60" type="date" value={isDemoMode ? '' : clampDateToDataRange(portfolioStartDate)} min={allBenchmarkStartDate || undefined} max={allBenchmarkEndDate || undefined} disabled={isDemoMode} onChange={(event: ChangeEvent<HTMLInputElement>) => setPortfolioStartDate(clampDateToDataRange(event.target.value))} />
                     <span className="mt-1 block text-xs text-slate-500">Tip: use the date you finished funding your account (after your last deposit), so returns and risk start from a fully-funded baseline.</span>
-                    <span className="mt-1 block text-xs text-slate-500">{portfolioStartDate ? 'Returns, risk metrics, and charts are calculated from this date.' : 'Leave blank to auto-use your earliest imported date.'}{allBenchmarkStartDate ? ` Earliest data in your dataset: ${allBenchmarkStartDate}.` : ''}</span>
+                    <span className="mt-1 block text-xs text-slate-500">{portfolioStartDate ? 'Returns, risk metrics, and charts are calculated from this date.' : 'Leave blank to auto-use your earliest imported date.'}{allBenchmarkStartDate && allBenchmarkEndDate ? ` You can only pick a date within your data range: ${allBenchmarkStartDate} to ${allBenchmarkEndDate}.` : allBenchmarkStartDate ? ` Earliest data in your dataset: ${allBenchmarkStartDate}.` : ''}</span>
                   </label>
                   <div>
                     <p className="text-slate-500">Accumulated trading period</p>
@@ -2048,7 +2070,12 @@ export default function App() {
                   </span>
                 )}
                 <input className="mt-1 w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-white outline-none focus:border-cyan-300 disabled:opacity-70" type="number" step="0.01" value={useManualStartingNav ? startingNav : Number((benchmarkStartingNav ?? 0).toFixed(2))} disabled={!useManualStartingNav} onChange={(event: ChangeEvent<HTMLInputElement>) => setStartingNav(Number(Number(event.target.value).toFixed(2)))} />
-                <span className="mt-1 block text-xs text-slate-500">{useManualStartingNav ? `Using your manual funding basis ${money(benchmarkStartingNav)}.` : `Auto: ${startingNavBasis === 'close' ? 'closing' : 'opening'} NAV ${money(benchmarkStartingNav)} on ${effectiveBenchmarkStartDate || effectivePortfolioStartDate}`}</span>
+                <span className="mt-1 block text-xs text-slate-500">{useManualStartingNav
+                  ? `Override: your Period return below is measured against the ${money(benchmarkStartingNav)} you typed (treated as your fully-funded starting capital).`
+                  : startingNavBasis === 'open'
+                    ? `Opening value (${money(benchmarkStartingNav)} on ${effectiveBenchmarkStartDate || effectivePortfolioStartDate}): your capital BEFORE any deposit made on the start date. Pick this if you were already funded the day before. A deposit on the start day counts as added cash, not a gain.`
+                    : `Closing value (${money(benchmarkStartingNav)} on ${effectiveBenchmarkStartDate || effectivePortfolioStartDate}): your capital AFTER deposits on the start date. Pick this if you funded later that same day.`}</span>
+                <span className="mt-1 block text-xs text-cyan-200/70">The Period return % and the portfolio line in the graph below update with this choice. All other dashboard metrics are unaffected.</span>
               </label>
               {benchmarkRangeMode === 'custom' && (
                 <label>
