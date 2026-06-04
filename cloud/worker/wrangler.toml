@@ -13,6 +13,13 @@ JWT_ISSUER = "stock-dashboard-for-ibkr-license"
 # forces frequent online re-validation (which re-checks the LemonSqueezy seat).
 JWT_TTL_SECONDS = "86400"
 
+# Analytics Engine — anonymous launch telemetry (tier, version, platform).
+# Enable in the Cloudflare dashboard: Workers & Pages -> your worker -> Settings
+# -> Bindings -> Add binding -> Analytics Engine -> dataset "helmfolio_launches".
+[[analytics_engine_datasets]]
+binding = "ANALYTICS"
+dataset = "helmfolio_launches"
+
 # Secrets are NOT stored here. Set them with:
 #   wrangler secret put JWT_PRIVATE_KEY
 #   wrangler secret put LEMONSQUEEZY_API_KEY

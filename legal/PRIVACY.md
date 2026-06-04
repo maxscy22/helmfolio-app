@@ -35,6 +35,13 @@ application data directory and/or local browser storage), never transmitted to u
 - Benchmark / market reference data: the Software may request publicly available
   market index data to display comparisons. These requests do not include your
   trading data.
+- Anonymous launch telemetry: on each app launch, the Software sends a single
+  anonymous ping to our servers containing only: the app version, the platform
+  (e.g. "win32"), and your license tier ("free" or "pro"). No personal data,
+  trading data, financial figures, device identifiers, or IP addresses are stored.
+  This is used solely to count how many users are actively using the Software so
+  we can make informed product decisions. No information about your trading
+  activity or account is ever included.
 
 4. PAYMENTS
 Purchases are processed by our payment and licensing provider, Lemon Squeezy,
@@ -44,7 +51,8 @@ and manage your license (such as your email and license key status).
 
 5. WHAT WE DO NOT DO
 - We do not sell your data.
-- We do not run analytics, advertising, or behavioral tracking inside the Software.
+- We do not run advertising or behavioral tracking inside the Software. We collect
+  only the limited anonymous launch telemetry described in Section 3 above.
 - We do not store your trades or financial data on our servers.
 
 6. DATA RETENTION AND DELETION

@@ -12,7 +12,7 @@ export const LEGAL_INFO = {
   supportEmail: APP_SUPPORT_EMAIL,
   website: APP_WEBSITE,
   jurisdiction: 'Hong Kong',
-  lastUpdated: '2026-05-31',
+  lastUpdated: '2026-06-05',
 } as const;
 
 export type LegalDocId = 'eula' | 'privacy' | 'disclaimer';

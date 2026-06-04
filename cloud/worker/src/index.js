@@ -178,6 +178,23 @@ const handleValidate = async (request, env) => {
   return json({ token, instanceId });
 };
 
+const handlePing = async (request, env) => {
+  const body = await request.json().catch(() => ({}));
+  const tier = ['free', 'pro'].includes(body?.tier) ? body.tier : 'free';
+  const version = typeof body?.version === 'string' ? body.version.slice(0, 20) : 'unknown';
+  const platform = typeof body?.platform === 'string' ? body.platform.slice(0, 20) : 'unknown';
+  const date = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
+  if (env.ANALYTICS) {
+    env.ANALYTICS.writeDataPoint({
+      blobs: [tier, version, platform, date],
+      indexes: [tier],
+    });
+  }
+
+  return json({ ok: true });
+};
+
 const handleDeactivate = async (request, env) => {
   const { licenseKey, instanceId } = await request.json().catch(() => ({}));
   if (!licenseKey || !instanceId) return json({ error: 'licenseKey and instanceId are required.' }, 400);
@@ -196,6 +213,7 @@ export default {
       if (pathname === '/activate') return await handleActivate(request, env);
       if (pathname === '/validate') return await handleValidate(request, env);
       if (pathname === '/deactivate') return await handleDeactivate(request, env);
+      if (pathname === '/ping') return await handlePing(request, env);
       return json({ error: 'Not found.' }, 404);
     } catch (error) {
       return json({ error: error instanceof Error ? error.message : 'Internal error.' }, 500);

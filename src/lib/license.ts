@@ -118,6 +118,23 @@ const stateFromVerification = (status: LicenseStatus, claims?: LicenseClaims, me
   message,
 });
 
+// Fire-and-forget anonymous launch ping. Sends only: tier, app version, platform.
+// No personal data, no device ID, no trading data. Errors are silently swallowed
+// so a failed ping never affects the app. Skipped in-browser (dev/unsupported).
+const sendLaunchPing = (tier: LicenseTier): void => {
+  try {
+    const version = typeof __APP_VERSION__ !== 'undefined' ? String(__APP_VERSION__) : 'unknown';
+    const platform = typeof process !== 'undefined' ? String(process.platform) : 'unknown';
+    fetch(`${LICENSE_API_URL}/ping`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tier, version, platform }),
+    }).catch(() => {});
+  } catch {
+    // Never let a telemetry error surface to the user.
+  }
+};
+
 // Loads the stored token, verifies it, and primes the in-memory token used by
 // apiFetch. In the browser (no desktop bridge) the license system is unsupported
 // and everything runs unrestricted for development.
@@ -128,6 +145,7 @@ export const loadLicenseState = async (): Promise<LicenseState> => {
   const token = await getStoredLicenseToken();
   if (!token) {
     setActiveLicenseToken('');
+    sendLaunchPing('free');
     return { status: 'none', tier: 'free' };
   }
   const { status, claims } = await verifyToken(token);
@@ -136,7 +154,9 @@ export const loadLicenseState = async (): Promise<LicenseState> => {
   } else {
     setActiveLicenseToken('');
   }
-  return stateFromVerification(status, claims);
+  const state = stateFromVerification(status, claims);
+  sendLaunchPing(state.tier);
+  return state;
 };
 
 // Converts a Worker error into a message safe to show a paying customer. Genuine
