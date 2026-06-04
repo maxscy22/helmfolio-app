@@ -184,10 +184,13 @@ const handlePing = async (request, env) => {
   const version = typeof body?.version === 'string' ? body.version.slice(0, 20) : 'unknown';
   const platform = typeof body?.platform === 'string' ? body.platform.slice(0, 20) : 'unknown';
   const date = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const country = request.cf?.country ?? 'unknown';
+  const continent = request.cf?.continent ?? 'unknown';
+  const session = body?.session === 'first' ? 'first' : 'returning';
 
   if (env.ANALYTICS) {
     env.ANALYTICS.writeDataPoint({
-      blobs: [tier, version, platform, date],
+      blobs: [tier, version, platform, date, country, continent, session],
       indexes: [tier],
     });
   }

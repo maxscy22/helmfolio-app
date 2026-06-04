@@ -15,6 +15,7 @@
 import * as ed from '@noble/ed25519';
 import {
   clearStoredLicenseToken,
+  dashboardStorage,
   getDeviceId,
   getStoredLicenseToken,
   hasSecureCredentialStore,
@@ -118,17 +119,22 @@ const stateFromVerification = (status: LicenseStatus, claims?: LicenseClaims, me
   message,
 });
 
-// Fire-and-forget anonymous launch ping. Sends only: tier, app version, platform.
+const PING_LAUNCHED_KEY = 'helmfolio:launched-before';
+
+// Fire-and-forget anonymous launch ping. Sends only: tier, app version, platform, session.
 // No personal data, no device ID, no trading data. Errors are silently swallowed
 // so a failed ping never affects the app. Skipped in-browser (dev/unsupported).
 const sendLaunchPing = (tier: LicenseTier): void => {
   try {
     const version = typeof __APP_VERSION__ !== 'undefined' ? String(__APP_VERSION__) : 'unknown';
     const platform = typeof process !== 'undefined' ? String(process.platform) : 'unknown';
+    const hasLaunchedBefore = dashboardStorage.getItem(PING_LAUNCHED_KEY) === '1';
+    const session = hasLaunchedBefore ? 'returning' : 'first';
+    if (!hasLaunchedBefore) dashboardStorage.setItem(PING_LAUNCHED_KEY, '1');
     fetch(`${LICENSE_API_URL}/ping`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tier, version, platform }),
+      body: JSON.stringify({ tier, version, platform, session }),
     }).catch(() => {});
   } catch {
     // Never let a telemetry error surface to the user.
