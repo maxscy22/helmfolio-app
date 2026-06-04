@@ -23,25 +23,51 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] },
-          colors: { base: '#020617', panel: '#0b1220' },
-        },
+  <!-- Tailwind: precompiled, purged static stylesheet (was the Play CDN runtime). -->
+  <link rel="stylesheet" href="/styles.css" />
+
+  <!-- Structured data: breadcrumb + step-by-step HowTo for rich results -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://helmfolio.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://helmfolio.com/guides/" },
+          { "@type": "ListItem", "position": 3, "name": "CSV reports & daily email" }
+        ]
       },
-    };
+      {
+        "@type": "HowTo",
+        "name": "Export & auto-email IBKR CSV reports",
+        "description": "Configure Interactive Brokers to email a Flex Query CSV report to your inbox every day, then import it into Helmfolio.",
+        "totalTime": "PT10M",
+        "step": [
+          {
+            "@type": "HowToStep",
+            "name": "Create the Email Flex Query",
+            "text": "In IBKR, create an Activity Flex Query that defines the exact data structure Helmfolio needs to parse your performance correctly.",
+            "url": "https://helmfolio.com/guides/csv-email.html#part-a"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Configure daily email delivery",
+            "text": "Set up IBKR to automatically email the Flex Query report to your inbox as a CSV file every day.",
+            "url": "https://helmfolio.com/guides/csv-email.html#part-b"
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Import into Helmfolio",
+            "text": "Open Helmfolio and import the CSV file. Duplicate trades are skipped automatically, so your local history keeps building over time.",
+            "url": "https://helmfolio.com/guides/csv-email.html#part-c"
+          }
+        ]
+      }
+    ]
+  }
   </script>
-  <style>
-    body { background-color: #020617; }
-    .hero-glow {
-      background:
-        radial-gradient(60% 50% at 50% 0%, rgba(34, 211, 238, 0.16), transparent 70%),
-        radial-gradient(40% 40% at 85% 20%, rgba(16, 185, 129, 0.10), transparent 70%);
-    }
-  </style>
 </head>
 
 <body class="font-sans text-slate-200 antialiased selection:bg-cyan-300/30">

@@ -23,26 +23,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] },
-          colors: { base: '#020617', panel: '#0b1220' },
-        },
-      },
-    };
-  </script>
-  <style>
-    body { background-color: #020617; }
-    .hero-glow {
-      background:
-        radial-gradient(60% 50% at 50% 0%, rgba(34, 211, 238, 0.16), transparent 70%),
-        radial-gradient(40% 40% at 85% 20%, rgba(16, 185, 129, 0.10), transparent 70%);
-    }
-    .card-glow { box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 20px 60px -30px rgba(34,211,238,0.35); }
-  </style>
+  <!-- Tailwind: precompiled, purged static stylesheet (was the Play CDN runtime). -->
+  <link rel="stylesheet" href="/styles.css" />
 </head>
 
 <body class="font-sans text-slate-200 antialiased selection:bg-cyan-300/30">

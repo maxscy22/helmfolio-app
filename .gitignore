@@ -17,3 +17,7 @@ vite.config.js
 # Loose full-res screenshot originals (published/cropped shots live in site/assets/).
 # Kept out of git in case they contain real account data.
 build/*.jpg
+
+# Pristine pre-optimization site image backups (source for npm run optimize-images).
+# Large; kept local-only and never published by Cloudflare Pages.
+.image-originals

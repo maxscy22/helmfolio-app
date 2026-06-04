@@ -7,26 +7,28 @@
   <!-- ============================================================ -->
   <!-- SEO / Social meta                                            -->
   <!-- ============================================================ -->
-  <title>Helmfolio — Local-first IBKR performance desk</title>
-  <meta name="description" content="Helmfolio is a 100% local desktop app for Interactive Brokers traders. One-click Flex sync, risk metrics, benchmarks and PDF reports — your trades never leave your computer." />
+  <title>Helmfolio — IBKR Performance Tracker & Trade Journal</title>
+  <meta name="description" content="Helmfolio is a local-first IBKR performance tracker and trade journal for Interactive Brokers traders. One-click Flex sync, cycle win rate, Sharpe & drawdown, benchmarks and PDF reports — your trades never leave your computer." />
   <link rel="canonical" href="https://helmfolio.com/" />
   <meta name="theme-color" content="#020617" />
 
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Helmfolio" />
-  <meta property="og:title" content="Helmfolio — Local-first IBKR performance desk" />
-  <meta property="og:description" content="One-click IBKR Flex sync, risk metrics, benchmarks and PDF reports. 100% local — your trades never touch the cloud." />
+  <meta property="og:title" content="Helmfolio — IBKR Performance Tracker & Trade Journal" />
+  <meta property="og:description" content="Local-first performance analytics for Interactive Brokers: one-click Flex sync, cycle KPIs, risk metrics, benchmarks and PDF reports. 100% local — your trades never touch the cloud." />
   <meta property="og:url" content="https://helmfolio.com/" />
   <meta property="og:image" content="https://helmfolio.com/assets/og-image.jpg" />
+  <meta property="og:image:alt" content="Helmfolio dashboard — IBKR portfolio overview, risk metrics and benchmarks" />
   <meta property="og:image:width" content="1024" />
   <meta property="og:image:height" content="568" />
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Helmfolio — Local-first IBKR performance desk" />
-  <meta name="twitter:description" content="One-click IBKR Flex sync, risk metrics, benchmarks and PDF reports. 100% local — your trades never touch the cloud." />
+  <meta name="twitter:title" content="Helmfolio — IBKR Performance Tracker & Trade Journal" />
+  <meta name="twitter:description" content="Local-first performance analytics for Interactive Brokers: one-click Flex sync, cycle KPIs, risk metrics, benchmarks and PDF reports. 100% local." />
   <meta name="twitter:image" content="https://helmfolio.com/assets/og-image.jpg" />
+  <meta name="twitter:image:alt" content="Helmfolio dashboard — IBKR portfolio overview, risk metrics and benchmarks" />
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="/assets/helmfolio-mark.png" />
@@ -38,37 +40,123 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 
   <!-- ============================================================ -->
-  <!-- Tailwind (Play CDN for v1 — zero build, instant deploy).     -->
-  <!-- TODO(prod polish): swap for a compiled styles.css via the    -->
-  <!-- Tailwind CLI to drop the CDN runtime + FOUC.                 -->
+  <!-- Tailwind: precompiled, purged static stylesheet.             -->
+  <!-- Build with `npm run build:site-css` after editing markup.    -->
+  <!-- (Replaced the render-blocking Tailwind Play CDN runtime that -->
+  <!--  was the root cause of the very slow LCP.)                   -->
   <!-- ============================================================ -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-          },
-          colors: {
-            base: '#020617',     // slate-950 — matches the app shell
-            panel: '#0b1220',
-          },
-        },
+  <link rel="stylesheet" href="/styles.css" />
+
+  <!-- Preload the hero screenshot: it is the LCP element, so fetch it early. -->
+  <link rel="preload" as="image" href="/assets/screenshot-dashboard.jpg" fetchpriority="high" />
+
+  <!-- ============================================================ -->
+  <!-- Structured data (Schema.org JSON-LD) for rich search results -->
+  <!-- ============================================================ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://helmfolio.com/#organization",
+        "name": "Helmfolio",
+        "url": "https://helmfolio.com/",
+        "logo": "https://helmfolio.com/assets/helmfolio-mark.png",
+        "email": "support@helmfolio.com",
+        "founder": { "@type": "Person", "name": "Max Shing" }
       },
-    };
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://helmfolio.com/#app",
+        "name": "Helmfolio",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Windows",
+        "url": "https://helmfolio.com/",
+        "image": "https://helmfolio.com/assets/og-image.jpg",
+        "description": "Helmfolio is a 100% local desktop app for Interactive Brokers traders. One-click Flex sync, cycle-based KPIs, risk metrics, benchmarks and PDF reports — your trades never leave your computer.",
+        "publisher": { "@id": "https://helmfolio.com/#organization" },
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "USD",
+          "lowPrice": "0",
+          "highPrice": "129",
+          "offerCount": "2"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://helmfolio.com/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Does anything get uploaded to the cloud?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Everything stays on your own computer. Your trades, positions, NAV history, cash transactions and settings are saved only on your machine — never on our servers and never in the cloud."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is my IBKR Flex Token safe?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Your Flex Token and Query ID are stored on your own computer, encrypted by your operating system. They are never written in plaintext and never uploaded anywhere. When you sync, your computer talks directly to IBKR's official Flex Web Service over HTTPS."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do you support brokers other than IBKR?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Helmfolio is engineered exclusively for Interactive Brokers using their Flex Query system. We would rather do one broker exceptionally well than many superficially."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does Helmfolio work for non-US / international stocks?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Helmfolio is engineered specifically for the US stock and options market (USD). While it can sync any IBKR account and convert base-currency cash items like dividends and deposits, the core analytics, tax logic and PnL reporting are fully optimized for US-denominated assets. Multi-currency reporting for international exchanges is currently outside our product scope."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How much history can I analyze?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Helmfolio is built around IBKR's 365-day Flex window and merges every sync into a growing local history — duplicate trades are skipped automatically — so your record keeps building over time on your own machine."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I use my license on more than one computer?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "A single Pro license can be activated on 2 of your personal devices. Moving to a new machine? Deactivate the old device inside the app first to free a seat, then activate the new one."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I back up my data or move to a new computer?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "In Settings you can export your entire dataset to a single JSON file — every trade, position, NAV snapshot and cash transaction — and import it back on any machine to pick up exactly where you left off. You can also open your local data folder straight from Settings to copy or archive it yourself."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Who is behind Helmfolio?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Helmfolio is built by an independent developer who trades on IBKR — designed by a trader, for traders. For anything you need, reach us at support@helmfolio.com."
+            }
+          }
+        ]
+      }
+    ]
+  }
   </script>
-  <style>
-    /* Subtle grid/glow backdrop so the dark base isn't flat */
-    body { background-color: #020617; }
-    .hero-glow {
-      background:
-        radial-gradient(60% 50% at 50% 0%, rgba(34, 211, 238, 0.16), transparent 70%),
-        radial-gradient(40% 40% at 85% 20%, rgba(16, 185, 129, 0.10), transparent 70%);
-    }
-    .card-glow { box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 20px 60px -30px rgba(34,211,238,0.35); }
-    details[open] .faq-chevron { transform: rotate(180deg); }
-  </style>
 </head>
 
 <body class="font-sans text-slate-200 antialiased selection:bg-cyan-300/30">
@@ -134,6 +222,7 @@
         <div class="mx-auto mt-16 max-w-5xl">
           <div class="card-glow overflow-hidden rounded-2xl border border-white/10 bg-panel">
             <img src="/assets/screenshot-dashboard.jpg" alt="Helmfolio dashboard showing portfolio overview, market sentiment and IBKR sync"
+                 width="1024" height="640" fetchpriority="high" decoding="async"
                  class="zoomable w-full cursor-zoom-in" />
           </div>
         </div>
@@ -442,6 +531,7 @@
             <p class="mt-1 text-sm text-slate-400">Yours to keep, forever.</p>
             <ul class="mt-7 space-y-3 text-sm text-slate-300">
               <li class="flex gap-3"><span class="text-cyan-300">✓</span> CSV &amp; manual import + core P/L</li>
+              <li class="flex gap-3"><span class="text-cyan-300">✓</span> Cycle win rate</li>
               <li class="flex gap-3"><span class="text-cyan-300">✓</span> Market sentiment — VIX, Fear &amp; Greed, AAII</li>
               <li class="flex gap-3 text-slate-500"><span>—</span> IBKR one-click auto-sync</li>
               <li class="flex gap-3 text-slate-500"><span>—</span> Risk metrics &amp; benchmarks</li>
@@ -465,7 +555,7 @@
             <ul class="mt-7 space-y-3 text-sm text-slate-300">
               <li class="flex gap-3"><span class="text-cyan-300">✓</span> Everything in Free</li>
               <li class="flex gap-3"><span class="text-cyan-300">✓</span> IBKR one-click auto-sync</li>
-              <li class="flex gap-3"><span class="text-cyan-300">✓</span> Cycle KPIs — win rate, payoff, profit factor</li>
+              <li class="flex gap-3"><span class="text-cyan-300">✓</span> Advanced cycle KPIs — payoff ratio &amp; profit factor</li>
               <li class="flex gap-3"><span class="text-cyan-300">✓</span> Risk metrics — Sharpe, max drawdown</li>
               <li class="flex gap-3"><span class="text-cyan-300">✓</span> Benchmark vs. NASDAQ &amp; S&amp;P 500</li>
               <li class="flex gap-3"><span class="text-cyan-300">✓</span> Leaderboard, P/L calendar &amp; cost review</li>
@@ -478,7 +568,7 @@
             <!-- LemonSqueezy checkout (helmfolio store). The Y4MTQWOQ founders' code
                  (-$30, first 100 redemptions) is pre-applied so the page opens already
                  showing $99 instead of the $129 list price. -->
-            <a href="https://helmfolio.lemonsqueezy.com/checkout/buy/1a405411-9af2-40f9-88e4-86a431cbed3e?checkout[discount_code]=Y4MTQWOQ&utm_source=helmfolio.com&utm_medium=website&utm_campaign=pricing_pro" data-buy-link
+            <a href="https://helmfolio.lemonsqueezy.com/checkout/buy/a0652962-8f7c-472e-b7a5-10a866bbcd04?checkout[discount_code]=Y4MTQWOQ&utm_source=helmfolio.com&utm_medium=website&utm_campaign=pricing_pro" data-buy-link
                class="mt-6 inline-flex items-center justify-center rounded-2xl bg-cyan-400 px-6 py-3.5 text-base font-bold text-slate-950 shadow-xl shadow-cyan-400/25 transition hover:bg-cyan-300">
               Get Pro — $99/year
             </a>

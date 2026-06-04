@@ -1,6 +1,32 @@
 # Helmfolio — Progress notes
 
-_Last updated: 2026-06-02 (~22:50). Website is LIVE at https://helmfolio.com (latest deploy https://cf46c8d1.helmfolio.pages.dev). Guides reworked + redeployed tonight (committed `e762c9e`). App: tag `v1.0.9` is the latest published. Resume from here._
+_Last updated: 2026-06-03 (~20:33). Website SEO pass done + deployed (latest deploy https://033b96ff.helmfolio.pages.dev, prod https://helmfolio.com). App: tag `v1.0.9` is the latest published. Resume from "Website SEO optimization" session below._
+
+## Session — Website SEO optimization (2026-06-03 evening)
+
+Goal: improve on-page SEO + Core Web Vitals for `site/` (static, Cloudflare Pages, project `helmfolio`). Deployed via `npx wrangler pages deploy site --project-name helmfolio --commit-dirty=true` from **PROJECT ROOT** → `https://033b96ff.helmfolio.pages.dev`. **NOT yet committed to git** — commit `site/` + `scripts/optimize-site-images.mjs` + `package.json` + `.gitignore`.
+
+### DONE (6 of 7 planned items, all live)
+1. **Image compression** — new `scripts/optimize-site-images.mjs` + npm script `optimize-images`. Uses `sharp` (added as **devDependency** `^0.34.5`; dev-only, NOT bundled in the Electron app). Recompresses `site/assets` images **in place** (same filenames/formats → no HTML changes) + shrinks favicon. Results: `helmfolio-mark.png` 879KB→43KB (resized to 256px max; only ever shown ≤64px), `og-image.jpg` 754→348KB, all 7 `screenshot-*.jpg` −54% to −77%, `csv_report.png`/`flex-query-config.png` optimized. **Total ~4.5MB → ~1.3MB.** Pristine originals backed up to **`.image-originals/`** (OUTSIDE `site/` so Pages won't publish them; added to `.gitignore`). Script reads from the backup each run → idempotent/reversible. Re-run after adding new images.
+2. **`site/sitemap.xml`** (7 urls: `/`, `/guides/`, 2 guide html, 3 legal html) + **`site/robots.txt`** (Allow all + `Sitemap:` line).
+3. **`index.html` JSON-LD** (before `</head>`): `@graph` = Organization + SoftwareApplication (FinanceApplication, OS Windows, AggregateOffer lowPrice 0 / highPrice 129 USD) + FAQPage (all 8 on-page Q&As).
+4. **Guides JSON-LD** — `flex-token.html` + `csv-email.html` each got BreadcrumbList + HowTo (3 steps → `#part-a/b/c`). Added `id="part-a/b/c"` + `scroll-mt-24` to flex-token's 3 Part `<h2>` (csv-email already had them).
+5. **Keyword alignment** — `index.html` `<title>` changed "Helmfolio — Local-first IBKR performance desk" → **"Helmfolio — IBKR Performance Tracker & Trade Journal"** (real search terms). meta description + og/twitter title+description updated to match. **Visible hero/H1/H2 copy left UNCHANGED** (brand "performance desk" kept on-page).
+6. **`og:image:alt` + `twitter:image:alt`** added to index.html. Cloudflare Web Analytics beacon was **already** installed (real token, bottom of `<body>`).
+
+All 3 JSON-LD blocks validated by `JSON.parse`.
+
+### DEFERRED — Task 4: compile Tailwind to static CSS (user chose "deploy current results first")
+- Remove the Tailwind **Play CDN** (`cdn.tailwindcss.com`) + inline `tailwind.config` from all **7 HTML pages** (index, guides/index+2, legal/3), ship a compiled `styles.css`. Would also unlock a strict CSP (see `site/_headers` note). **Only visually-risky item** → do with a local preview + page-by-page visual check.
+- `tailwindcss 3.4.19` already a devDep, but `tailwind.config.js`/`postcss.config.js` are for the **APP** (`content: ./index.html + ./src`), NOT the site → needs a **site-specific** config + input CSS + build script. Site theme tokens: `colors base #020617 / panel #0b1220`, Inter font, custom `.hero-glow`/`.card-glow`/`.faq-chevron` in `<style>` blocks.
+
+### SUGGESTED NEXT (manual, user account needed)
+- **Google Search Console**: add `helmfolio.com`, submit `https://helmfolio.com/sitemap.xml`.
+- **Rich Results Test** (`search.google.com/test/rich-results`) on homepage + 2 guides → confirm FAQ/HowTo/SoftwareApplication parse.
+- **Backlinks** (matters most for a new domain): Reddit r/interactivebrokers, Product Hunt, trading-tool directories.
+
+### Email-capture strategy decision (discussed, NOT built)
+- Rejected: LS $0 "free product" checkout gate (looks like a payment page → scam alarm for cautious IBKR traders). Agreed direction: **keep GitHub download frictionless (no email gate)**, then capture email **in-app** via a gentle prompt after first successful data import (engagement is highest there) → POST to LS Audience API so LS broadcast still works. NOT implemented yet.
 
 ## Session — IBKR guides overhaul (2026-06-02 evening)
 
@@ -124,7 +150,7 @@ Committed in `e762c9e` (`site/guides/flex-token.html`, `site/guides/csv-email.ht
 - **Features expanded** to 9 cards (added Cycle KPIs, Sharpe/maxDD, leaderboard drill-down, P/L calendar, cost & execution review) + new **"in cycles" explainer** section (what a cycle is + why) — the core $99 justification. PDF card reworded to self-review / your-records (no tax framing).
 - **`docs/FAQ.md` Free vs Pro table** expanded to match site (🔒 = preview in free, unlocked by Pro).
 - **App ↔ site decoupled**: removed hardcoded price from `LicenseModal`; "See plans & upgrade" CTA now opens `APP_WEBSITE + '/#pricing'`. App version injected from `package.json` at build time (`__APP_VERSION__`).
-- **Buy button wired** to real checkout `https://helmfolio.lemonsqueezy.com/checkout/buy/1a405411-...?checkout[discount_code]=Y4MTQWOQ` (code pre-applied). Same URL in `.env` `VITE_LICENSE_PURCHASE_URL`.
+- **Buy button wired** to real checkout `https://helmfolio.lemonsqueezy.com/checkout/buy/a0652962-...?checkout[discount_code]=Y4MTQWOQ` (code pre-applied). Same URL in `.env` `VITE_LICENSE_PURCHASE_URL`.
 - **Published `v1.0.4`** via `npm run electron:publish` (GH_TOKEN in shell) → GitHub release `maxscy22/helmfolio-app`; auto-update verified working.
 - **Anchor-jump bug fixed**: lazy full-width screenshots shifted layout so `/#pricing` landed on "Connected in about 3 minutes". Added a scroll-to-hash-on-load script in `site/index.html`. **Needs redeploy** (`wrangler pages deploy site`).
 

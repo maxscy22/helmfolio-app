@@ -34,16 +34,18 @@ export function LicenseModal({ open, state, onActivate, onDeactivate, onClose }:
   const isActive = state.status === 'active';
 
   // Free vs Pro value comparison shown on the paywall. Mirrors the real feature
-  // gate (PREMIUM_FEATURES + lockFigures): core P/L is free, advanced analytics,
-  // IBKR sync, benchmarks, risk metrics, and PDF export are Pro. Market sentiment
-  // (VIX, Fear & Greed, AAII) is intentionally FREE, so it is not listed here.
+  // gate (PREMIUM_FEATURES + lockFigures): core P/L AND cycle win rate are free,
+  // advanced analytics, IBKR sync, benchmarks, risk metrics, and PDF export are
+  // Pro. Market sentiment (VIX, Fear & Greed, AAII) is intentionally FREE, so it
+  // is not listed here.
   const comparisonRows: { label: string; free: 'yes' | 'no' | 'locked'; pro: 'yes' }[] = [
     { label: 'CSV & manual import + core P/L', free: 'yes', pro: 'yes' },
+    { label: 'Cycle win rate', free: 'yes', pro: 'yes' },
     { label: 'Market sentiment — VIX, Fear & Greed, AAII', free: 'yes', pro: 'yes' },
     { label: 'IBKR one-click auto-sync', free: 'no', pro: 'yes' },
     { label: 'Risk metrics — Sharpe, max drawdown', free: 'no', pro: 'yes' },
     { label: 'Benchmark vs NASDAQ & S&P 500', free: 'no', pro: 'yes' },
-    { label: 'Advanced KPIs — win rate, payoff, profit factor', free: 'locked', pro: 'yes' },
+    { label: 'Advanced KPIs — payoff ratio & profit factor', free: 'locked', pro: 'yes' },
     { label: 'Themed PDF report export', free: 'no', pro: 'yes' },
   ];
   const cell = (value: 'yes' | 'no' | 'locked') =>
