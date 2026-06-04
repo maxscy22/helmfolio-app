@@ -34,17 +34,19 @@ export function LicenseModal({ open, state, onActivate, onDeactivate, onClose }:
   const isActive = state.status === 'active';
 
   // Free vs Pro value comparison shown on the paywall. Mirrors the real feature
-  // gate (PREMIUM_FEATURES + lockFigures): core P/L AND cycle win rate are free,
-  // advanced analytics, IBKR sync, benchmarks, risk metrics, and PDF export are
-  // Pro. Market sentiment (VIX, Fear & Greed, AAII) is intentionally FREE, so it
-  // is not listed here.
+  // gate (PREMIUM_FEATURES + lockFigures): core P/L, cycle win rate, your equity
+  // curve, and the benchmark comparison are free (your own NAV + public index
+  // data); Pro focuses on automation (IBKR sync) and institutional-grade
+  // analytics (risk metrics, advanced KPIs, leaderboards, PDF export). Market
+  // sentiment (VIX, Fear & Greed, AAII) is intentionally FREE, so it is not listed.
   const comparisonRows: { label: string; free: 'yes' | 'no' | 'locked'; pro: 'yes' }[] = [
     { label: 'CSV & manual import + core P/L', free: 'yes', pro: 'yes' },
     { label: 'Cycle win rate', free: 'yes', pro: 'yes' },
+    { label: 'Equity curve & P/L trend', free: 'yes', pro: 'yes' },
+    { label: 'Benchmark vs NASDAQ & S&P 500', free: 'yes', pro: 'yes' },
     { label: 'Market sentiment — VIX, Fear & Greed, AAII', free: 'yes', pro: 'yes' },
     { label: 'IBKR one-click auto-sync', free: 'no', pro: 'yes' },
     { label: 'Risk metrics — Sharpe, max drawdown', free: 'no', pro: 'yes' },
-    { label: 'Benchmark vs NASDAQ & S&P 500', free: 'no', pro: 'yes' },
     { label: 'Advanced KPIs — payoff ratio & profit factor', free: 'locked', pro: 'yes' },
     { label: 'Themed PDF report export', free: 'no', pro: 'yes' },
   ];

@@ -114,13 +114,34 @@ const requireLicense = (request, response, next) => {
   });
 };
 
-app.get('/api/benchmarks/ytd', requireLicense, async (request, response) => {
+// Benchmark indices (NASDAQ, S&P 500) are free, public market data — no license
+// gate. A simple 24h in-memory cache (keyed by the requested date range) shields
+// the upstream Yahoo Finance fetch from rate limits and abuse now that the route
+// is open to free users, and makes the chart load instantly on repeat views.
+const BENCHMARK_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const benchmarkCache = new Map();
+
+app.get('/api/benchmarks/ytd', async (request, response) => {
+  const startDate = typeof request.query.start === 'string' ? request.query.start : undefined;
+  const endDate = typeof request.query.end === 'string' ? request.query.end : undefined;
+  const cacheKey = `${startDate ?? ''}|${endDate ?? ''}`;
   try {
-    response.json(await fetchYtdBenchmarks({
-      startDate: typeof request.query.start === 'string' ? request.query.start : undefined,
-      endDate: typeof request.query.end === 'string' ? request.query.end : undefined,
-    }));
+    const cached = benchmarkCache.get(cacheKey);
+    if (cached && Date.now() - cached.cachedAtMs < BENCHMARK_CACHE_TTL_MS) {
+      response.json(cached.payload);
+      return;
+    }
+    const payload = await fetchYtdBenchmarks({ startDate, endDate });
+    benchmarkCache.set(cacheKey, { cachedAtMs: Date.now(), payload });
+    response.json(payload);
   } catch (error) {
+    // On an upstream failure, serve a stale cache entry if we have one rather than
+    // failing the now-free chart for everyone.
+    const stale = benchmarkCache.get(cacheKey);
+    if (stale) {
+      response.json(stale.payload);
+      return;
+    }
     response.status(500).json({ error: error instanceof Error ? error.message : 'Failed to import benchmark data.' });
   }
 });

@@ -622,10 +622,8 @@ export default function App() {
   }, [licenseState.status]);
 
   useEffect(() => {
-    if (!isPro) {
-      setBenchmarkStatus('Benchmarks are a Pro feature. Activate a license to unlock them.');
-      return;
-    }
+    // Benchmark indices (NASDAQ, S&P 500) are free, public market data — comparing
+    // your own NAV against them is a free engagement hook, not a paywalled feature.
     const loadBenchmarks = async () => {
       try {
         const params = new URLSearchParams();
@@ -633,11 +631,6 @@ export default function App() {
         if (effectiveBenchmarkEndDate) params.set('end', effectiveBenchmarkEndDate);
         const response = await apiFetch(`/api/benchmarks/ytd?${params.toString()}`);
         const payload = await response.json();
-        if (response.status === 402) {
-          setLicenseState((current) => ({ ...current, tier: 'free', status: current.status === 'active' ? 'expired' : current.status }));
-          setBenchmarkStatus('Benchmarks are a Pro feature. Activate a license to unlock them.');
-          return;
-        }
         if (!response.ok) throw new Error(payload.error ?? 'Failed to load Yahoo Finance benchmarks.');
         setBenchmarks(payload.benchmarks);
         setBenchmarkStatus(`Yahoo Finance benchmarks loaded for ${payload.startDate ?? 'YTD start'} to ${payload.endDate ?? 'today'}.`);
@@ -646,7 +639,7 @@ export default function App() {
       }
     };
     loadBenchmarks();
-  }, [effectiveBenchmarkStartDate, effectiveBenchmarkEndDate, isPro]);
+  }, [effectiveBenchmarkStartDate, effectiveBenchmarkEndDate]);
 
   useEffect(() => {
     // Market sentiment (VIX, Fear & Greed, AAII) is free, public macro data — it
@@ -1946,14 +1939,13 @@ export default function App() {
             </div>
           </Section>
 
-          <Section hint={lockFigures} onUnlock={openPaywall} title="Equity Curve & P/L Trend" subtitle={hasActualNavCurve ? 'Daily account NAV plus weekly and monthly Change in NAV bars for actual account growth and volatility.' : 'Daily equity curve plus weekly and monthly realized P/L bars for growth trend and volatility.'}>
+          <Section title="Equity Curve & P/L Trend" subtitle={hasActualNavCurve ? 'Daily account NAV plus weekly and monthly Change in NAV bars for actual account growth and volatility.' : 'Daily equity curve plus weekly and monthly realized P/L bars for growth trend and volatility.'}>
             <div className="space-y-5">
               <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-4">
                 <div className="mb-3">
                   <p className="font-semibold text-white">Equity Curve</p>
                   <p className="mt-1 text-sm text-slate-400">{hasActualNavCurve ? `Uses your imported daily Net Asset Value rows${navReturnPct !== null && effectivePortfolioStartDate ? ` · total NAV return ${(navReturnPct * 100).toFixed(2)}% since ${effectivePortfolioStartDate}` : ''}.` : 'Starting NAV plus cumulative realized P/L. Daily trade data still drives the line.'}</p>
                 </div>
-                <LockedOverlay locked={lockFigures} onUnlock={openPaywall}>
                 <div className="h-96">
                   <ResponsiveContainer width="100%" height="100%">
                     <RechartsLineChart data={displayedEquityCurveData}>
@@ -1965,7 +1957,6 @@ export default function App() {
                     </RechartsLineChart>
                   </ResponsiveContainer>
                 </div>
-                </LockedOverlay>
               </div>
               <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-4">
                 <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
@@ -1986,7 +1977,6 @@ export default function App() {
                     ))}
                   </div>
                 </div>
-                <LockedOverlay locked={lockFigures} onUnlock={openPaywall}>
                 <div className="h-96">
                   <ResponsiveContainer width="100%" height="100%">
                     <RechartsBarChart data={monthlyPnlChartData}>
@@ -2000,7 +1990,6 @@ export default function App() {
                     </RechartsBarChart>
                   </ResponsiveContainer>
                 </div>
-                </LockedOverlay>
               </div>
             </div>
             <div className="mt-5 rounded-3xl border border-white/10 bg-white/[0.04] p-4">
@@ -2022,7 +2011,6 @@ export default function App() {
                   ))}
                 </div>
               </div>
-              <LockedOverlay locked={lockFigures} onUnlock={openPaywall}>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <RechartsBarChart data={weeklyPnlChartData}>
@@ -2036,11 +2024,10 @@ export default function App() {
                   </RechartsBarChart>
                 </ResponsiveContainer>
               </div>
-              </LockedOverlay>
             </div>
           </Section>
 
-          <Section hint={lockFigures} onUnlock={openPaywall} title="Period Benchmark Comparison" subtitle="Start from your portfolio start date, ALL records, or a custom date range. Portfolio return is cash-flow adjusted and rebased to the selected period.">
+          <Section title="Period Benchmark Comparison" subtitle="Start from your portfolio start date, ALL records, or a custom date range. Portfolio return is cash-flow adjusted and rebased to the selected period.">
             <p className="mb-4 rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm leading-6 text-slate-300">{benchmarkStatus}</p>
             <div className="mb-4 grid gap-3 text-sm text-slate-300 md:grid-cols-2">
               <label>
@@ -2102,21 +2089,17 @@ export default function App() {
                 {effectivePortfolioStartDate && <p className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">Started investing {effectivePortfolioStartDate}</p>}
               </div>
               <div className="grid gap-3 md:grid-cols-3">
-                {benchmarkSummaryCards.map((card) => {
-                  const cardLocked = lockFigures && card.label !== 'Portfolio';
-                  return (
+                {benchmarkSummaryCards.map((card) => (
                   <div key={card.label} className={`rounded-2xl border ${card.border} ${card.background} p-5 shadow-lg shadow-black/10`}>
                     <p className="text-sm font-semibold text-slate-300">{card.label}</p>
                     <p className={`mt-2 text-4xl font-black tracking-tight ${card.color}`}>
-                      <LockedValue locked={cardLocked} onUnlock={openPaywall}>{card.value === undefined ? 'N/A' : benchmarkPercent(card.value)}</LockedValue>
+                      {card.value === undefined ? 'N/A' : benchmarkPercent(card.value)}
                     </p>
                     <p className="mt-2 text-xs text-slate-400">{card.label === 'Portfolio' && hasActualNavCurve ? 'Cash-flow-adjusted period return' : 'Period return'}</p>
                   </div>
-                  );
-                })}
+                ))}
               </div>
             </div>
-            <LockedOverlay locked={lockFigures} onUnlock={openPaywall}>
             <div className="h-[26rem]">
               <ResponsiveContainer width="100%" height="100%">
                 <RechartsLineChart data={ytdBenchmarkData}>
@@ -2130,7 +2113,6 @@ export default function App() {
                 </RechartsLineChart>
               </ResponsiveContainer>
             </div>
-            </LockedOverlay>
           </Section>
 
           <Section hint={lockFigures} onUnlock={openPaywall} title="Top Winning Symbols" subtitle="Aggregated by symbol using total realized P/L, not individual execution rows.">

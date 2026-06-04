@@ -26,5 +26,5 @@ export const LICENSE_PURCHASE_URL =
 // NOTE: Market sentiment (VIX, Fear & Greed, AAII) is intentionally FREE — it is
 // public macro data anyone can look up, used as a free engagement hook, not a
 // paywalled feature. So it is deliberately NOT listed here.
-export const PREMIUM_FEATURES = ['ibkrSync', 'benchmarks', 'riskMetrics'] as const;
+export const PREMIUM_FEATURES = ['ibkrSync', 'riskMetrics'] as const;
 export type PremiumFeature = (typeof PREMIUM_FEATURES)[number];
