@@ -46,6 +46,7 @@ interface DesktopBridge {
   backendPort: number;
   sessionToken: string;
   deviceId: string;
+  platform: string;
   getLicenseToken: () => Promise<{ token: string }>;
   setLicenseToken: (token: string) => Promise<{ ok: boolean }>;
   clearLicenseToken: () => Promise<{ ok: boolean }>;

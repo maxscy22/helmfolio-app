@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld('desktop', {
   backendPort,
   sessionToken,
   deviceId,
+  platform: process.platform,
   // License token (OS-encrypted via safeStorage in the main process).
   getLicenseToken: () => ipcRenderer.invoke('license:get'),
   setLicenseToken: (token) => ipcRenderer.invoke('license:set', token),

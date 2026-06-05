@@ -127,7 +127,10 @@ const PING_LAUNCHED_KEY = 'helmfolio:launched-before';
 const sendLaunchPing = (tier: LicenseTier): void => {
   try {
     const version = typeof __APP_VERSION__ !== 'undefined' ? String(__APP_VERSION__) : 'unknown';
-    const platform = typeof process !== 'undefined' ? String(process.platform) : 'unknown';
+    const platform =
+      typeof window !== 'undefined' && window.desktop?.platform
+        ? String(window.desktop.platform)
+        : 'unknown';
     const hasLaunchedBefore = dashboardStorage.getItem(PING_LAUNCHED_KEY) === '1';
     const session = hasLaunchedBefore ? 'returning' : 'first';
     if (!hasLaunchedBefore) dashboardStorage.setItem(PING_LAUNCHED_KEY, '1');
