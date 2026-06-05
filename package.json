@@ -1,7 +1,7 @@
 {
   "name": "stock-dashboard-for-ibkr",
   "productName": "Helmfolio",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "description": "Helmfolio — Take the helm of your trading performance. Built for IBKR traders. A local-first trading performance desk.",
   "author": "Max Shing",
   "type": "module",
