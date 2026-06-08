@@ -154,6 +154,39 @@ Committed in `e762c9e` (`site/guides/flex-token.html`, `site/guides/csv-email.ht
 - **Published `v1.0.4`** via `npm run electron:publish` (GH_TOKEN in shell) → GitHub release `maxscy22/helmfolio-app`; auto-update verified working.
 - **Anchor-jump bug fixed**: lazy full-width screenshots shifted layout so `/#pricing` landed on "Connected in about 3 minutes". Added a scroll-to-hash-on-load script in `site/index.html`. **Needs redeploy** (`wrangler pages deploy site`).
 
+## Session — 2026-06-09 (Worker dual-store + license expiry display)
+Branch `desktop-app`. Released **app `v1.0.17`** + redeployed the Worker twice.
+
+1. **Worker accepts BOTH live + test store license keys.** `matchesConfiguredProduct`
+   (`cloud/worker/src/index.js`) now treats `LS_STORE_ID` / `LS_PRODUCT_ID` /
+   `LS_VARIANT_ID` as comma-separated allow-lists (single value still works).
+   `wrangler.toml`: `LS_PRODUCT_ID = "1107286,1101253"`, `LS_VARIANT_ID =
+   "1733952,1724730"` (store id `392353` is shared between test & live mode).
+   Reason: founder/test CD-KEYs still belong to the old test-mode product, which
+   was being rejected after the live migration. LemonSqueezy license
+   activate/validate endpoints don't gate on the API key, so one Worker validates
+   both. Note: remove the test ids before long-term GA to avoid leaked test keys.
+   **Deployed** (`npm run deploy`).
+2. **Portfolio Snapshot "Win Rate" → FREE tier.** It reads the exact same
+   `stats.winRate` as the already-free "Cycle Win Rate" KPI, so locking it was
+   pointless. Removed the `<LockedValue>` wrapper in `src/App.tsx` (~line 1562).
+   No marketing copy change needed (win rate is already advertised as free).
+3. **License expiry date now shown.** The JWT `exp` is only the 24h offline-grace
+   window, not the real term end. Now the Worker reads LemonSqueezy
+   `license_key.expires_at` and signs it into the token as a new claim **`lexp`**
+   (both `/activate` + `/validate`); `LicenseClaims.lexp?: string | null` added in
+   `src/lib/license.ts`; `LicenseModal` active panel renders
+   "Renews / expires: <date>" via `formatLicenseExpiry`. **User tested in the
+   packaged app — date displays correctly.** Caveat: `lexp` is absent for
+   subscription products whose keys never expire (then nothing shows); old tokens
+   backfill `lexp` on the next background renewal / re-activation.
+
+Released `v1.0.17` (`npm version patch` from ROOT + `npm run electron:publish`).
+Minor mishap recovered: `npm version patch` was first run inside `cloud/worker`
+(only bumped the worker `package.json` to 1.0.1, no commit/tag created) — reverted
+with `git restore` and re-run from root. **Reminder: take the GitHub `v1.0.17`
+release out of Draft so auto-update sees it.**
+
 ## Pending / TODO (next session)
 1. **Website links** in `site/index.html` (search `TODO`):
    - ✅ `data-download-link` → `https://github.com/maxscy22/helmfolio-app/releases/latest/download/Helmfolio-Setup.exe` (done 2026-06-01).
