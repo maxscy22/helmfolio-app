@@ -13,6 +13,14 @@ type LicenseModalProps = {
   onClose: () => void;
 };
 
+// Formats LemonSqueezy's ISO expiry into a readable local date. Falls back to
+// the raw string if it is not a parseable date.
+const formatLicenseExpiry = (iso: string): string => {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+};
+
 export function LicenseModal({ open, state, onActivate, onDeactivate, onClose }: LicenseModalProps) {
   const [licenseKey, setLicenseKey] = useState('');
   const [busy, setBusy] = useState(false);
@@ -108,6 +116,11 @@ export function LicenseModal({ open, state, onActivate, onDeactivate, onClose }:
               {state.claims?.sub && (
                 <p className="text-xs text-slate-400">
                   Key: <span className="font-mono text-slate-200">{`${state.claims.sub.slice(0, 6)}...${state.claims.sub.slice(-4)}`}</span>
+                </p>
+              )}
+              {state.claims?.lexp && (
+                <p className="text-xs text-slate-400">
+                  Renews / expires: <span className="text-slate-200">{formatLicenseExpiry(state.claims.lexp)}</span>
                 </p>
               )}
               <button

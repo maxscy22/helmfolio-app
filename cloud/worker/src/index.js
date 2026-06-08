@@ -87,7 +87,12 @@ const signJwt = async (payload, env) => {
   return `${signingInput}.${bytesToBase64Url(new Uint8Array(signature))}`;
 };
 
-const buildTokenPayload = (licenseKey, deviceId, instanceId, env) => {
+// `licenseExpiresAt` is LemonSqueezy's license_key.expires_at (ISO string or
+// null). It is the REAL subscription/term end date — distinct from `exp`, which
+// is only the short offline-grace window for this token. We embed it (signed) so
+// the app can display the genuine expiry. May be null for subscription products
+// that never expire the key and rely on subscription status instead.
+const buildTokenPayload = (licenseKey, deviceId, instanceId, env, licenseExpiresAt) => {
   const now = Math.floor(Date.now() / 1000);
   const ttl = Number(env.JWT_TTL_SECONDS || DEFAULT_TTL_SECONDS);
   return {
@@ -98,6 +103,7 @@ const buildTokenPayload = (licenseKey, deviceId, instanceId, env) => {
     tier: 'pro',
     iat: now,
     exp: now + ttl,
+    ...(licenseExpiresAt ? { lexp: licenseExpiresAt } : {}),
   };
 };
 
@@ -162,7 +168,7 @@ const handleActivate = async (request, env) => {
   }
 
   const instanceId = data.instance?.id;
-  const token = await signJwt(buildTokenPayload(licenseKey, deviceId, instanceId, env), env);
+  const token = await signJwt(buildTokenPayload(licenseKey, deviceId, instanceId, env, data.license_key?.expires_at), env);
   return json({ token, instanceId });
 };
 
@@ -185,7 +191,7 @@ const handleValidate = async (request, env) => {
     return json({ error: 'This license is no longer active.' }, 402);
   }
 
-  const token = await signJwt(buildTokenPayload(licenseKey, deviceId, instanceId, env), env);
+  const token = await signJwt(buildTokenPayload(licenseKey, deviceId, instanceId, env, data.license_key?.expires_at), env);
   return json({ token, instanceId });
 };
 

@@ -47,6 +47,10 @@ export interface LicenseClaims {
   tier: string;
   iat: number;
   exp: number;
+  // Real license/subscription end date (ISO 8601) from LemonSqueezy, signed by
+  // the Worker. Distinct from `exp` (the 24h offline-grace window). May be absent
+  // for subscription products whose license keys never expire.
+  lexp?: string | null;
 }
 
 export interface LicenseState {
