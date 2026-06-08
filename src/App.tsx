@@ -1559,7 +1559,7 @@ export default function App() {
                   </div>
                   <div className="rounded-2xl bg-white/[0.05] p-4">
                     <p className="text-xs text-slate-500">Win Rate</p>
-                    <p className="mt-1 text-xl font-bold text-white"><LockedValue locked={lockFigures} onUnlock={openPaywall}>{percent(stats.winRate)}</LockedValue></p>
+                    <p className="mt-1 text-xl font-bold text-white">{percent(stats.winRate)}</p>
                   </div>
                   <div className="rounded-2xl bg-white/[0.05] p-4">
                     <p className="text-xs text-slate-500">Current Account Value</p>

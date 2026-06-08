@@ -116,12 +116,23 @@ const callLemonSqueezy = async (endpoint, params, env) => {
   return { ok: response.ok, data };
 };
 
-// Ensures the license belongs to the configured store/product/variant, if set.
+// Ensures the license belongs to a configured store/product/variant, if set.
+// Each var may hold a single id OR a comma-separated list of allowed ids, so a
+// single Worker can accept keys from BOTH the live store and the (test-mode)
+// store at once — e.g. LS_PRODUCT_ID = "1107286,1101253". A blank/unset var
+// means "do not restrict on this field".
 const matchesConfiguredProduct = (meta, env) => {
   if (!meta) return true;
-  if (env.LS_STORE_ID && String(meta.store_id) !== String(env.LS_STORE_ID)) return false;
-  if (env.LS_PRODUCT_ID && String(meta.product_id) !== String(env.LS_PRODUCT_ID)) return false;
-  if (env.LS_VARIANT_ID && String(meta.variant_id) !== String(env.LS_VARIANT_ID)) return false;
+  const allowsValue = (configured, actual) => {
+    const list = String(configured || '')
+      .split(',')
+      .map((id) => id.trim())
+      .filter(Boolean);
+    return list.length === 0 || list.includes(String(actual));
+  };
+  if (env.LS_STORE_ID && !allowsValue(env.LS_STORE_ID, meta.store_id)) return false;
+  if (env.LS_PRODUCT_ID && !allowsValue(env.LS_PRODUCT_ID, meta.product_id)) return false;
+  if (env.LS_VARIANT_ID && !allowsValue(env.LS_VARIANT_ID, meta.variant_id)) return false;
   return true;
 };
 
@@ -187,10 +198,21 @@ const handlePing = async (request, env) => {
   const country = request.cf?.country ?? 'unknown';
   const continent = request.cf?.continent ?? 'unknown';
   const session = body?.session === 'first' ? 'first' : 'returning';
+  // Granular license status (distinguishes never-paid 'none'/'free' from churned
+  // 'expired'/'lapsed') — better churn visibility than tier alone.
+  const status = ['none', 'active', 'expired', 'invalid', 'lapsed'].includes(body?.status)
+    ? body.status
+    : 'unknown';
+  // Version-adoption signal: first install / updated since last launch / same version.
+  const launchType = ['first', 'updated', 'same'].includes(body?.launchType) ? body.launchType : 'unknown';
+  // Activation signal: has the user imported any data yet? Boolean only, no content.
+  const hasImportedData = body?.hasImportedData === 'yes' ? 'yes' : 'no';
 
   if (env.ANALYTICS) {
     env.ANALYTICS.writeDataPoint({
-      blobs: [tier, version, platform, date, country, continent, session],
+      // NOTE: append-only — never reorder existing blobs or historical queries break.
+      // blob1..7 (existing) + blob8 status, blob9 launchType, blob10 hasImportedData.
+      blobs: [tier, version, platform, date, country, continent, session, status, launchType, hasImportedData],
       indexes: [tier],
     });
   }

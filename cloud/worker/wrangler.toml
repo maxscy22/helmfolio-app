@@ -4,16 +4,23 @@ compatibility_date = "2024-09-23"
 
 # Non-secret configuration. Fill in your real LemonSqueezy IDs (optional but
 # recommended so a license from a different product is rejected).
+# Each id var accepts a comma-separated list, so the Worker can validate keys
+# from BOTH the live store and the test-mode store at the same time:
+#   live  product 1107286 / variant 1733952
+#   test  product 1101253 / variant 1724730
+# (store id is the same 392353 in test and live mode).
 [vars]
 LS_STORE_ID = "392353"
-LS_PRODUCT_ID = "1107286"
-LS_VARIANT_ID = "1733952"
+LS_PRODUCT_ID = "1107286,1101253"
+LS_VARIANT_ID = "1733952,1724730"
 JWT_ISSUER = "stock-dashboard-for-ibkr-license"
 # 24-hour offline grace window. A shorter window limits license-sharing abuse and
 # forces frequent online re-validation (which re-checks the LemonSqueezy seat).
 JWT_TTL_SECONDS = "86400"
 
-# Analytics Engine — anonymous launch telemetry (tier, version, platform).
+# Analytics Engine — anonymous launch telemetry. Blob schema (append-only):
+# blob1 tier, blob2 version, blob3 platform, blob4 date, blob5 country,
+# blob6 continent, blob7 session, blob8 status, blob9 launchType, blob10 hasImportedData.
 # Enable in the Cloudflare dashboard: Workers & Pages -> your worker -> Settings
 # -> Bindings -> Add binding -> Analytics Engine -> dataset "helmfolio_launches".
 [[analytics_engine_datasets]]

@@ -23,6 +23,7 @@ import {
   storeLicenseToken,
 } from './api';
 import { LICENSE_API_URL, LICENSE_PUBLIC_KEY } from './licenseConfig';
+import { STORAGE_KEY } from './persistence';
 
 // @noble/ed25519 v2 needs a SHA-512 implementation. SHA-512 (unlike Ed25519) is
 // universally available in WebCrypto, so we route it through crypto.subtle.
@@ -120,11 +121,15 @@ const stateFromVerification = (status: LicenseStatus, claims?: LicenseClaims, me
 });
 
 const PING_LAUNCHED_KEY = 'helmfolio:launched-before';
+const PING_LAST_VERSION_KEY = 'helmfolio:last-version';
 
-// Fire-and-forget anonymous launch ping. Sends only: tier, app version, platform, session.
-// No personal data, no device ID, no trading data. Errors are silently swallowed
-// so a failed ping never affects the app. Skipped in-browser (dev/unsupported).
-const sendLaunchPing = (tier: LicenseTier): void => {
+// Fire-and-forget anonymous launch ping. Sends only aggregate, non-identifying
+// signals: tier, license status, app version, platform, session, version-adoption
+// type, and a boolean "has the user imported any data yet". No personal data, no
+// device ID, no IP, no trading data (hasImportedData is a yes/no flag only).
+// Errors are silently swallowed so a failed ping never affects the app. Skipped
+// in-browser (dev/unsupported).
+const sendLaunchPing = (status: LicenseStatus, tier: LicenseTier): void => {
   try {
     const version = typeof __APP_VERSION__ !== 'undefined' ? String(__APP_VERSION__) : 'unknown';
     const platform =
@@ -133,11 +138,29 @@ const sendLaunchPing = (tier: LicenseTier): void => {
         : 'unknown';
     const hasLaunchedBefore = dashboardStorage.getItem(PING_LAUNCHED_KEY) === '1';
     const session = hasLaunchedBefore ? 'returning' : 'first';
+
+    // Version-adoption signal: first launch ever / updated to a new version since
+    // the last launch / relaunched on the same version. Tells us how quickly users
+    // pick up auto-updates.
+    const lastVersion = dashboardStorage.getItem(PING_LAST_VERSION_KEY);
+    const launchType = !hasLaunchedBefore
+      ? 'first'
+      : lastVersion && lastVersion !== version
+        ? 'updated'
+        : 'same';
+
+    // Activation signal: has the user ever imported/synced a dataset? Boolean only
+    // — distinguishes "downloaded but never used" from genuine active users. No
+    // trading content is read or sent, only whether the saved-data key exists.
+    const hasImportedData = dashboardStorage.getItem(STORAGE_KEY) != null ? 'yes' : 'no';
+
     if (!hasLaunchedBefore) dashboardStorage.setItem(PING_LAUNCHED_KEY, '1');
+    dashboardStorage.setItem(PING_LAST_VERSION_KEY, version);
+
     fetch(`${LICENSE_API_URL}/ping`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tier, version, platform, session }),
+      body: JSON.stringify({ tier, status, version, platform, session, launchType, hasImportedData }),
     }).catch(() => {});
   } catch {
     // Never let a telemetry error surface to the user.
@@ -154,7 +177,7 @@ export const loadLicenseState = async (): Promise<LicenseState> => {
   const token = await getStoredLicenseToken();
   if (!token) {
     setActiveLicenseToken('');
-    sendLaunchPing('free');
+    sendLaunchPing('none', 'free');
     return { status: 'none', tier: 'free' };
   }
   const { status, claims } = await verifyToken(token);
@@ -164,7 +187,7 @@ export const loadLicenseState = async (): Promise<LicenseState> => {
     setActiveLicenseToken('');
   }
   const state = stateFromVerification(status, claims);
-  sendLaunchPing(state.tier);
+  sendLaunchPing(state.status, state.tier);
   return state;
 };
 
