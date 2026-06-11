@@ -21,7 +21,9 @@ const marketReferenceCacheTtlMs = 6 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 // When chasing a not-yet-published weekly AAII release, don't retry more often
 // than this — prevents the frequent requests that trip AAII's bot-protection.
-const aaiiMinRetryMs = 6 * 60 * 60 * 1000;
+const aaiiMinRetryMs = 60 * 60 * 1000;
+// Bumped when AAII parsing/storage semantics change (e.g. excel serial off-by-one fix).
+const aaiiCacheSchemaVersion = 2;
 
 // Durable on-disk cache so the last successfully fetched market data (crucially
 // the latest AAII weekly release) survives backend restarts / app relaunches,
@@ -80,11 +82,19 @@ const haveCurrentAaiiRelease = (aaiiData, now = new Date()) => {
 // AAII publishes once per week (Thursdays). Skip the network request entirely when
 // we already have this week's release; otherwise allow a fetch but throttle retries
 // so a blocked/slow AAII isn't hammered on every app load.
-const shouldFetchAaii = (aaiiData, lastAttemptAt, now = new Date()) => {
-  if (!aaiiData) return true;
-  if (haveCurrentAaiiRelease(aaiiData, now)) return false;
+const getAaiiFetchDecision = (aaiiData, lastAttemptAt, now = new Date()) => {
+  if (!aaiiData) return { shouldFetch: true };
+  if (haveCurrentAaiiRelease(aaiiData, now)) return { shouldFetch: false, reason: 'current' };
   const lastAttempt = lastAttemptAt ? new Date(lastAttemptAt).getTime() : 0;
-  return now.getTime() - lastAttempt >= aaiiMinRetryMs;
+  const elapsed = now.getTime() - lastAttempt;
+  if (elapsed < aaiiMinRetryMs) {
+    return {
+      shouldFetch: false,
+      reason: 'throttled',
+      retryAtMs: lastAttempt + aaiiMinRetryMs,
+    };
+  }
+  return { shouldFetch: true };
 };
 
 const toIsoDate = (unixSeconds) => new Date(unixSeconds * 1000).toISOString().slice(0, 10);
@@ -223,7 +233,8 @@ const oneYearHighsFromAaiiRows = (rows) => {
 
 const excelSerialToDate = (serial) => {
   if (!Number.isFinite(serial)) return null;
-  const epochMs = Date.UTC(1899, 11, 30) + Number(serial) * 86400000;
+  // Excel serial 1 = 1900-01-01; epoch is 1899-12-30 so day count is (serial - 1).
+  const epochMs = Date.UTC(1899, 11, 30) + (Number(serial) - 1) * 86400000;
   const date = new Date(epochMs);
   if (Number.isNaN(date.getTime())) return null;
   return `${date.getUTCMonth() + 1}/${date.getUTCDate()}/${date.getUTCFullYear()}`;
@@ -382,38 +393,52 @@ const settleReference = async (fetcher, cachedReference, fallbackData = null) =>
 };
 
 export const fetchMarketReferenceData = async ({ forceRefresh = false } = {}) => {
-  if (!forceRefresh && marketReferenceCache && Date.now() - marketReferenceCache.cachedAtMs < marketReferenceCacheTtlMs) {
-    return {
-      ...marketReferenceCache.payload,
-      servedFromCache: true,
-    };
-  }
   const cached = marketReferenceCache?.payload;
   const now = new Date();
+  const vixFearGreedCachedAtMs = marketReferenceCache?.vixFearGreedCachedAtMs ?? marketReferenceCache?.cachedAtMs ?? 0;
+  const vixFearGreedFresh = !forceRefresh && vixFearGreedCachedAtMs > 0
+    && now.getTime() - vixFearGreedCachedAtMs < marketReferenceCacheTtlMs;
 
-  // VIX & CNN Fear/Greed are cheap, daily, and not bot-protected — refresh them,
-  // falling back to the last good values on failure.
-  const [vix, fearGreed] = await Promise.all([
-    settleReference(fetchVix, cached?.vix?.data ? { data: cached.vix.data, cachedAt: cached.importedAt } : null),
-    settleReference(fetchCnnFearGreed, cached?.fearGreed?.data ? { data: cached.fearGreed.data, cachedAt: cached.importedAt } : null),
-  ]);
+  // VIX & CNN Fear/Greed are cheap, daily, and not bot-protected — refresh them on
+  // a 6-hour cadence, but AAII is evaluated on every request (see below).
+  let vix;
+  let fearGreed;
+  let nextVixFearGreedCachedAtMs = vixFearGreedCachedAtMs;
+  if (vixFearGreedFresh && cached?.vix?.data && cached?.fearGreed?.data) {
+    vix = cached.vix;
+    fearGreed = cached.fearGreed;
+  } else {
+    [vix, fearGreed] = await Promise.all([
+      settleReference(fetchVix, cached?.vix?.data ? { data: cached.vix.data, cachedAt: cached.importedAt } : null),
+      settleReference(fetchCnnFearGreed, cached?.fearGreed?.data ? { data: cached.fearGreed.data, cachedAt: cached.importedAt } : null),
+    ]);
+    nextVixFearGreedCachedAtMs = Date.now();
+  }
 
-  // AAII: weekly cadence (Thursdays) + bot-protection. Only hit the network when we
-  // don't already hold the current week's release; otherwise serve the stored
-  // release as the authoritative latest data — no "fallback snapshot" message for
-  // paying users, and no needless requests that trip the bot-protection.
-  const prevAaii = cached?.aaii?.data ?? null;
-  let aaiiLastAttemptAt = marketReferenceCache?.aaiiLastAttemptAt ?? null;
+  // AAII: weekly cadence (Thursdays) + bot-protection. Evaluated every request so a
+  // 6-hour VIX/CNN cache does not block chasing a new weekly release.
+  const cachedAaii = cached?.aaii?.data ?? null;
+  const aaiiSchemaStale = marketReferenceCache?.aaiiCacheSchemaVersion !== aaiiCacheSchemaVersion;
+  const prevAaii = aaiiSchemaStale ? null : cachedAaii;
+  let aaiiLastAttemptAt = aaiiSchemaStale ? null : (marketReferenceCache?.aaiiLastAttemptAt ?? null);
   let aaii;
-  if (shouldFetchAaii(prevAaii, aaiiLastAttemptAt, now)) {
+  const aaiiDecision = getAaiiFetchDecision(prevAaii, aaiiLastAttemptAt, now);
+  if (aaiiDecision.shouldFetch) {
     aaiiLastAttemptAt = now.toISOString();
     aaii = await settleReference(
       fetchAaiiSentiment,
-      prevAaii ? { data: prevAaii, cachedAt: cached?.importedAt ?? null } : null,
+      cachedAaii ? { data: cachedAaii, cachedAt: cached?.importedAt ?? null } : null,
       aaiiSeedData,
     );
+  } else if (aaiiDecision.reason === 'throttled') {
+    const retryAt = new Date(aaiiDecision.retryAtMs).toLocaleString();
+    aaii = {
+      data: cachedAaii,
+      error: `AAII retry throttled to avoid bot-protection. Showing last successful data; next automatic attempt after ${retryAt}.`,
+      cached: true,
+    };
   } else {
-    aaii = { data: prevAaii, error: null, cached: false };
+    aaii = { data: cachedAaii, error: null, cached: false };
   }
 
   const payload = {
@@ -421,10 +446,12 @@ export const fetchMarketReferenceData = async ({ forceRefresh = false } = {}) =>
     vix,
     fearGreed,
     aaii,
-    servedFromCache: false,
+    servedFromCache: vixFearGreedFresh && !aaiiDecision.shouldFetch,
   };
   marketReferenceCache = {
     cachedAtMs: Date.now(),
+    vixFearGreedCachedAtMs: nextVixFearGreedCachedAtMs,
+    aaiiCacheSchemaVersion,
     aaiiLastAttemptAt,
     payload,
   };
